@@ -16,6 +16,7 @@ from .add_adsorbate import remove_CO
 from .add_adsorbate import remove_H
 from .add_adsorbate import add_H
 from .add_adsorbate import move_CO
+from .add_adsorbate import add_h_gas
 from .initial import initial_structure_gen
 from .rand_cluster import rand_clustering
 from .rand_cluster import voronoi_polygons
