@@ -2,7 +2,7 @@
 from .add_adsorbate import randomize_all
 # from .add_adsorbate import md_nve
 # from .add_adsorbate import nve_n2p2
-from .add_adsorbate import mirror_mutate
+# from .add_adsorbate import mirror_mutate
 # from .add_adsorbate import mirror_mutate_Cu
 # from .add_adsorbate import generate_H_site
 # from .add_adsorbate import add_molecule_on_cluster

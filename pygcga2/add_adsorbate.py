@@ -74,6 +74,175 @@ def selecting_index(weights=None):
     return len(_w) - 1
 
 
+def checkatoms(atoms, bond_range):
+    _d = atoms.get_all_distances(mic=True)
+    brange = {}
+    for key, value in bond_range.items():
+        brange[frozenset(key)] = np.min(np.array(value))
+    symbols = atoms.get_chemical_symbols()
+    n = atoms.get_global_number_of_atoms()
+    for i in range(n):
+        for j in range(i + 1, n):
+            k = (symbols[i], symbols[j])
+            dmin = brange[frozenset(k)]
+            if _d[i][j] < dmin:
+                print(
+                    "bond of type {} is too short, {}, should be {} min".format(
+                        k, _d[i][j], dmin
+                    )
+                )
+                return False
+    print("all bonds are good!")
+    return True
+
+
+def find_surf(atoms, el="Cu", mult=0.95, maxCN=12, minCN=5):
+    """
+    find the the index of atoms forming the surface of a slab
+    """
+    atoms.pbc = [1, 1, 0]
+    nat_cut = natural_cutoffs(atoms, mult=mult)
+    nl = NeighborList(nat_cut, self_interaction=False, bothways=True)
+    nl.update(atoms)
+
+    pos = atoms.get_positions()
+    all_ndx = [atom.index for atom in atoms]
+    target_ndx = [atom.index for atom in atoms if atom.symbol == el]
+    # pos_target = np.take(pos, target_ndx, axis=0)
+    # posz_target = pos_target[:, 2]
+    # pmid = (np.max(posz_target) + np.min(posz_target)) / 2
+    # target_ndx_ = [target_ndx[i] for i, p in enumerate(posz_target) if p > pmid]
+
+    crd = []
+    for n in target_ndx:
+        indices, offsets = nl.get_neighbors(n)
+        x = np.intersect1d(indices, all_ndx)
+        crd.append(len(x))
+
+    # print(crd, min(crd), max(crd))
+    surf_ndx = []
+    for i, c in enumerate(crd):
+        if c <= maxCN and c >= minCN:
+            surf_ndx.append(target_ndx[i])
+
+    return surf_ndx
+
+def remove_H(atoms=None):
+    H_ndx = [atom.index for atom in atoms if atom.symbol == "H"]
+    sel_ndx = random.choice(H_ndx)
+    del atoms[sel_ndx]
+
+    # if symmetric slab
+    # pos = atoms.get_positions()
+    # posz = pos[:, 2] # gets z positions of atoms in surface
+    # posz_mid = np.average(posz)
+    # upper, lower = [], []
+    # for i in H_ndx:
+    #     if H_ndx[i].position[2] >= posz_mid:
+    #         upper.append(i)
+    #     else:
+    #         lower.append(i)
+    # sel_ndx_u = random.choice(upper)
+    # sel_ndx_l = random.choice(lower)
+    # del atoms[sel_ndx_u, sel_ndx_l]
+
+    return atoms
+
+def add_H(surface, bond_range=None, max_trial=50):
+    print("Running Add H Mutation")
+    # surf_ind = find_cluster_single_element(surface, el="Pt", maxCN=12, minCN=1)
+    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=11, minCN=0) + find_surf(surface, el="O", mult=0.85, maxCN=2, minCN=0)
+    
+    pos = surface.get_positions()
+    posz = pos[:, 2] # gets z positions of atoms in surface
+    posz_mid = np.average(posz)
+    upper = []
+    for i in surf_ind:
+        if surface[i].position[2] >= posz_mid:
+            upper.append(i)
+    # get mean cluster xyz pos
+    for _ in range(max_trial):
+        n_choose = np.random.choice(upper)
+        x = pos[n_choose, 0] + np.random.normal(0, 0.4, 1)[0]
+        y = pos[n_choose, 1] + np.random.normal(0, 0.4, 1)[0]
+        z = pos[n_choose, 2] + np.abs(np.random.normal(0, 0.4, 1)[0])
+        t = surface.copy()
+        t.append(Atom(symbol="H", position=[x, y, z], tag=1))
+
+    # if symmetric slab
+    # pos = surface.get_positions()
+    # posz = pos[:, 2] # gets z positions of atoms in surface
+    # posz_mid = np.average(posz)
+    # upper, lower = [], []
+    # for i in surf_ind:
+    #     if surface[i].position[2] >= posz_mid:
+    #         upper.append(i)
+    #     else:
+    #         lower.append(i)
+    # # get mean cluster xyz pos
+    # for _ in range(max_trial):
+    #     n_choose_u = np.random.choice(upper)
+    #     n_choose_l = np.random.choice(lower)
+    #     xu = pos[n_choose_u, 0] + np.random.normal(0, 0.4, 1)[0]
+    #     yu = pos[n_choose_u, 1] + np.random.normal(0, 0.4, 1)[0]
+    #     zu = pos[n_choose_u, 2] + np.abs(np.random.normal(0, 0.4, 1)[0])
+    #     xl = pos[n_choose_l, 0] + np.random.normal(0, 0.4, 1)[0]
+    #     yl = pos[n_choose_l, 1] + np.random.normal(0, 0.4, 1)[0]
+    #     zl = pos[n_choose_l, 2] - np.abs(np.random.normal(0, 0.8, 1)[0])
+    #     t = surface.copy()
+    #     t.append(Atom(symbol="H", position=[xu, yu, zu], tag=1))
+    #     t.append(Atom(symbol="H", position=[xl, yl, zl], tag=2))
+        inspect = checkatoms(t, bond_range)
+        if inspect:
+            return t
+    raise NoReasonableStructureFound("No good structure found using randomize")
+
+
+def remove_separated_H(surface, bond_range=None):
+    """
+    Remove H atoms that aren't bonded to anything else. This removes the first instance of this happening in a frame
+    """
+    print("Running Remove H Mutation")
+    H_ind = [atom.index for atom in surface if atom.symbol == "H"]
+    for hydrogen in H_ind:
+        if len(surface.get_neighbors(hydrogen, 1.5)) == 0:
+            t = surface.copy()
+            del t[hydrogen]
+            inspect = checkatoms(t, bond_range)
+            if inspect:
+                return t
+
+
+def randomize_all(surface, dr, bond_range, max_trial=10):
+    """
+    Randomize all atoms in the surface
+    Takes
+        surface(ase.atoms.Atoms): surface to randomize
+        dr(float): maximum displacement
+        bond_range(dict): dictionary of bond ranges
+        max_trial(int): maximum number of trials
+    """
+    print("Running Randomize Surface Atoms Mutation")
+
+    fixed = surface.constraints[0].index
+
+    for _ in range(max_trial):
+        ro = surface.get_positions()
+        rn = ro.copy()
+        t = surface.copy()
+        for i, n in enumerate(range(len(surface))):
+            if i in fixed:
+                continue
+            disp = np.random.uniform(-1.0, 1.0, [1, 3])
+            rn[n, :] = ro[n, :] + dr * disp
+
+        t.set_positions(rn)
+        inspect = checkatoms(t, bond_range)
+        if inspect:
+            return t
+
+    raise NoReasonableStructureFound("No good structure found using randomize")
+
 # def generate_H_site(r0, distance=None, width=None, center_of_mass=None):
 #     """
 #     r0 :
@@ -331,15 +500,6 @@ def selecting_index(weights=None):
 #         "No reasonable structure found when adding an addsorbate"
 #     )
 
-
-def remove_H(atoms=None):
-    H_ndx = [atom.index for atom in atoms if atom.symbol == "H"]
-    sel_ndx = random.choice(H_ndx)
-    del atoms[sel_ndx]
-
-    return atoms
-
-
 # def delete_single_atom_with_constraint(atoms=None, indice_to_delete=None):
 #     if indice_to_delete is None:
 #         return  # nothing to delete
@@ -443,60 +603,6 @@ def remove_H(atoms=None):
 #     return
 
 
-def checkatoms(atoms, bond_range):
-    _d = atoms.get_all_distances(mic=True)
-    brange = {}
-    for key, value in bond_range.items():
-        brange[frozenset(key)] = np.min(np.array(value))
-    symbols = atoms.get_chemical_symbols()
-    n = atoms.get_global_number_of_atoms()
-    for i in range(n):
-        for j in range(i + 1, n):
-            k = (symbols[i], symbols[j])
-            dmin = brange[frozenset(k)]
-            if _d[i][j] < dmin:
-                print(
-                    "bond of type {} is too short, {}, should be {} min".format(
-                        k, _d[i][j], dmin
-                    )
-                )
-                return False
-    print("all bonds are good!")
-    return True
-
-
-def find_surf(atoms, el="Cu", mult=0.95, maxCN=12, minCN=5):
-    """
-    find the the index of atoms forming the surface of a slab
-    """
-    atoms.pbc = [1, 1, 0]
-    nat_cut = natural_cutoffs(atoms, mult=mult)
-    nl = NeighborList(nat_cut, self_interaction=False, bothways=True)
-    nl.update(atoms)
-
-    pos = atoms.get_positions()
-    all_ndx = [atom.index for atom in atoms]
-    target_ndx = [atom.index for atom in atoms if atom.symbol == el]
-    # pos_target = np.take(pos, target_ndx, axis=0)
-    # posz_target = pos_target[:, 2]
-    # pmid = (np.max(posz_target) + np.min(posz_target)) / 2
-    # target_ndx_ = [target_ndx[i] for i, p in enumerate(posz_target) if p > pmid]
-
-    crd = []
-    for n in target_ndx:
-        indices, offsets = nl.get_neighbors(n)
-        x = np.intersect1d(indices, all_ndx)
-        crd.append(len(x))
-
-    # print(crd, min(crd), max(crd))
-    surf_ndx = []
-    for i, c in enumerate(crd):
-        if c <= maxCN and c >= minCN:
-            surf_ndx.append(target_ndx[i])
-
-    return surf_ndx
-
-
 # def find_cluster_single_element(atoms, el="Pt", maxCN=12, minCN=5):
 #     """
 #     find the the index of atoms forming a cluster, only written for single element
@@ -561,129 +667,6 @@ def find_surf(atoms, el="Cu", mult=0.95, maxCN=12, minCN=5):
 #         if inspect:
 #             return t
 #     raise NoReasonableStructureFound("No good structure found using randomize")
-
-
-def add_H(surface, bond_range=None, max_trial=50):
-    print("Running Add H Mutation")
-    # surf_ind = find_cluster_single_element(surface, el="Pt", maxCN=12, minCN=1)
-    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=11, minCN=0) + find_surf(surface, el="O", mult=0.85, maxCN=2, minCN=0)
-    pos = surface.get_positions()
-    posz = pos[:, 2] # gets z positions of atoms in surface
-    posz_mid = np.average(posz)
-    upper, lower = [], []
-    for i in surf_ind:
-        if surface[i].position[2] >= posz_mid:
-            upper.append(i)
-        else:
-            lower.append(i)
-    # get mean cluster xyz pos
-    for _ in range(max_trial):
-        n_choose_u = np.random.choice(upper)
-        n_choose_l = np.random.choice(lower)
-        xu = pos[n_choose_u, 0] + np.random.normal(0, 0.4, 1)[0]
-        yu = pos[n_choose_u, 1] + np.random.normal(0, 0.4, 1)[0]
-        zu = pos[n_choose_u, 2] + np.abs(np.random.normal(0, 0.4, 1)[0])
-        xl = pos[n_choose_l, 0] + np.random.normal(0, 0.4, 1)[0]
-        yl = pos[n_choose_l, 1] + np.random.normal(0, 0.4, 1)[0]
-        zl = pos[n_choose_l, 2] - np.abs(np.random.normal(0, 0.8, 1)[0])
-        t = surface.copy()
-        t.append(Atom(symbol="H", position=[xu, yu, zu], tag=1))
-        t.append(Atom(symbol="H", position=[xl, yl, zl], tag=2))
-        inspect = checkatoms(t, bond_range)
-        if inspect:
-            return t
-    raise NoReasonableStructureFound("No good structure found using randomize")
-
-
-def remove_separated_H(surface, bond_range=None):
-    """
-    Remove H atoms that aren't bonded to anything else. This removes the first instance of this happening in a frame
-    """
-    print("Running Remove H Mutation")
-    H_ind = [atom.index for atom in surface if atom.symbol == "H"]
-    for hydrogen in H_ind:
-        if len(surface.get_neighbors(hydrogen, 1.5)) == 0:
-            t = surface.copy()
-            del t[hydrogen]
-            inspect = checkatoms(t, bond_range)
-            if inspect:
-                return t
-
-
-# def randomize(
-#     surface,
-#     dr,
-#     bond_range,
-#     max_trial=10,
-#     disp_list=["C", "Pt", "H"],
-#     disp_variance_dict={"C": 0.4, "Pt": 0.6, "H": 0.3},
-# ):
-#     """
-#     Randomize all atoms of C, Pt, and H in system
-#     Takes
-#         surface(ase.atoms.Atoms): surface to randomize
-#         dr(float): maximum displacement
-#         bond_range(dict): dictionary of bond ranges
-#         max_trial(int): maximum number of trials
-#         disp_list(list): list of atoms to randomize
-#     """
-#     print("Running Randomize Mutation")
-#     dict_displacement = {}
-#     for atom in disp_list:
-#         dict_displacement[atom] = [atom.index for atom in surface if atom.symbol == "C"]
-
-#     cutoff = natural_cutoffs(surface, 1.1)
-#     nl = NeighborList(cutoff, self_interaction=False, bothways=True)
-#     nl.update(surface)
-
-#     for _ in range(max_trial):
-#         ro = surface.get_positions()
-#         rn = ro.copy()
-#         t = surface.copy()
-#         for atom, list_disp_index in dict_displacement.items():
-#             for i, n in enumerate(list_disp_index):  # only randomize the C atoms
-#                 disp = np.random.uniform(-1.0, 1.0, [1, 3])
-#                 # replace disp with normal distribution
-#                 disp = np.random.normal(0.0, disp_variance_dict[atom], [1, 3])
-#                 rn[n, :] = ro[n, :] + dr * disp
-
-#         t.set_positions(rn)
-#         inspect = checkatoms(t, bond_range)
-#         if inspect:
-#             return t
-
-#     raise NoReasonableStructureFound("No good structure found at function randomize")
-
-
-def randomize_all(surface, dr, bond_range, max_trial=10):
-    """
-    Randomize all atoms in the surface
-    Takes
-        surface(ase.atoms.Atoms): surface to randomize
-        dr(float): maximum displacement
-        bond_range(dict): dictionary of bond ranges
-        max_trial(int): maximum number of trials
-    """
-    print("Running Randomize Surface Atoms Mutation")
-
-    fixed = surface.constraints[0].index
-
-    for _ in range(max_trial):
-        ro = surface.get_positions()
-        rn = ro.copy()
-        t = surface.copy()
-        for i, n in enumerate(range(len(surface))):
-            if i in fixed:
-                continue
-            disp = np.random.uniform(-1.0, 1.0, [1, 3])
-            rn[n, :] = ro[n, :] + dr * disp
-
-        t.set_positions(rn)
-        inspect = checkatoms(t, bond_range)
-        if inspect:
-            return t
-
-    raise NoReasonableStructureFound("No good structure found using randomize")
 
 
 # def md_nve(surface, calc, T=500, timestep=1, steps=30):
@@ -762,123 +745,166 @@ def randomize_all(surface, dr, bond_range, max_trial=10):
 #         "Bond range didn't satisfy in the Allegro MD calculations"
 #     )
 
+# def randomize(
+#     surface,
+#     dr,
+#     bond_range,
+#     max_trial=10,
+#     disp_list=["C", "Pt", "H"],
+#     disp_variance_dict={"C": 0.4, "Pt": 0.6, "H": 0.3},
+# ):
+#     """
+#     Randomize all atoms of C, Pt, and H in system
+#     Takes
+#         surface(ase.atoms.Atoms): surface to randomize
+#         dr(float): maximum displacement
+#         bond_range(dict): dictionary of bond ranges
+#         max_trial(int): maximum number of trials
+#         disp_list(list): list of atoms to randomize
+#     """
+#     print("Running Randomize Mutation")
+#     dict_displacement = {}
+#     for atom in disp_list:
+#         dict_displacement[atom] = [atom.index for atom in surface if atom.symbol == "C"]
 
-def mirror_mutate(atoms):
-    """Do the mutation of the atoms input."""
-    print("Running Mirror Mutation")
-    tc = True
-    top_ndx = [
-        atom.index
-        for atom in atoms
-        if (atom.symbol != "Pt" and atom.symbol != "H" and atom.symbol != "C")
-    ]
-    slab_ndx = [
-        atom.index
-        for atom in atoms
-        if (atom.symbol != "Pt" and atom.symbol != "H" and atom.symbol != "C")
-    ]
-    top = atoms[top_ndx]
-    slab = atoms[slab_ndx]
+#     cutoff = natural_cutoffs(surface, 1.1)
+#     nl = NeighborList(cutoff, self_interaction=False, bothways=True)
+#     nl.update(surface)
 
-    num = top.numbers
-    unique_types = list(set(num))
-    nu = dict()
-    for u in unique_types:
-        nu[u] = sum(num == u)
+#     for _ in range(max_trial):
+#         ro = surface.get_positions()
+#         rn = ro.copy()
+#         t = surface.copy()
+#         for atom, list_disp_index in dict_displacement.items():
+#             for i, n in enumerate(list_disp_index):  # only randomize the C atoms
+#                 disp = np.random.uniform(-1.0, 1.0, [1, 3])
+#                 # replace disp with normal distribution
+#                 disp = np.random.normal(0.0, disp_variance_dict[atom], [1, 3])
+#                 rn[n, :] = ro[n, :] + dr * disp
 
-    unique_atom_types = get_all_atom_types(slab, num)
-    blmin = closest_distances_generator(
-        atom_numbers=unique_atom_types, ratio_of_covalent_radii=0.7
-    )
-    n_tries = 1000
-    counter = 0
-    changed = False
+#         t.set_positions(rn)
+#         inspect = checkatoms(t, bond_range)
+#         if inspect:
+#             return t
 
-    while tc and counter < n_tries:
-        counter += 1
-        cand = top.copy()
-        pos = cand.get_positions()
-        cm = np.average(top.get_positions(), axis=0)
+#     raise NoReasonableStructureFound("No good structure found at function randomize")
 
-        # first select a randomly oriented cutting plane
-        theta = pi * np.random.random()
-        phi = 2.0 * pi * np.random.random()
-        n = (cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta))
-        n = np.array(n)
-        # n[2]=0
+# def mirror_mutate(atoms):
+#     """Do the mutation of the atoms input."""
+#     print("Running Mirror Mutation")
+#     tc = True
+#     top_ndx = [
+#         atom.index
+#         for atom in atoms
+#         if (atom.symbol != "Pt" and atom.symbol != "H" and atom.symbol != "C")
+#     ]
+#     slab_ndx = [
+#         atom.index
+#         for atom in atoms
+#         if (atom.symbol != "Pt" and atom.symbol != "H" and atom.symbol != "C")
+#     ]
+#     top = atoms[top_ndx]
+#     slab = atoms[slab_ndx]
 
-        # Calculate all atoms signed distance to the cutting plane
-        D = []
-        for i, p in enumerate(pos):
-            d = np.dot(p - cm, n)
-            D.append((i, d))
+#     num = top.numbers
+#     unique_types = list(set(num))
+#     nu = dict()
+#     for u in unique_types:
+#         nu[u] = sum(num == u)
 
-        # Sort the atoms by their signed distance
-        D.sort(key=lambda x: x[1])
-        nu_taken = dict()
+#     unique_atom_types = get_all_atom_types(slab, num)
+#     blmin = closest_distances_generator(
+#         atom_numbers=unique_atom_types, ratio_of_covalent_radii=0.7
+#     )
+#     n_tries = 1000
+#     counter = 0
+#     changed = False
 
-        # Select half of the atoms needed for a full cluster
-        p_use = []
-        n_use = []
-        for i, d in D:
-            if num[i] not in nu_taken.keys():
-                nu_taken[num[i]] = 0
-            if nu_taken[num[i]] < nu[num[i]] / 2.0:
-                p_use.append(pos[i])
-                n_use.append(num[i])
-                nu_taken[num[i]] += 1
+#     while tc and counter < n_tries:
+#         counter += 1
+#         cand = top.copy()
+#         pos = cand.get_positions()
+#         cm = np.average(top.get_positions(), axis=0)
 
-        reflect = False
-        # calculate the mirrored position and add these.
-        pn = []
-        for p in p_use:
-            pt = p - 2.0 * np.dot(p - cm, n) * n
-            if reflect:
-                pt = -pt + 2 * cm + 2 * n * np.dot(pt - cm, n)
-            pn.append(pt)
+#         # first select a randomly oriented cutting plane
+#         theta = pi * np.random.random()
+#         phi = 2.0 * pi * np.random.random()
+#         n = (cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta))
+#         n = np.array(n)
+#         # n[2]=0
 
-        n_use.extend(n_use)
-        p_use.extend(pn)
+#         # Calculate all atoms signed distance to the cutting plane
+#         D = []
+#         for i, p in enumerate(pos):
+#             d = np.dot(p - cm, n)
+#             D.append((i, d))
 
-        # In the case of an uneven number of
-        # atoms we need to add one extra
-        for n in nu.keys():
-            if nu[n] % 2 == 0:
-                continue
-            while sum(n_use == n) > nu[n]:
-                for i in range(int(len(n_use) / 2), len(n_use)):
-                    if n_use[i] == n:
-                        del p_use[i]
-                        del n_use[i]
-                        break
-            assert sum(n_use == n) == nu[n]
+#         # Sort the atoms by their signed distance
+#         D.sort(key=lambda x: x[1])
+#         nu_taken = dict()
 
-        # Make sure we have the correct number of atoms
-        # and rearrange the atoms so they are in the right order
-        for i in range(len(n_use)):
-            if num[i] == n_use[i]:
-                continue
-            for j in range(i + 1, len(n_use)):
-                if n_use[j] == num[i]:
-                    tn = n_use[i]
-                    tp = p_use[i]
-                    n_use[i] = n_use[j]
-                    p_use[i] = p_use[j]
-                    p_use[j] = tp
-                    n_use[j] = tn
+#         # Select half of the atoms needed for a full cluster
+#         p_use = []
+#         n_use = []
+#         for i, d in D:
+#             if num[i] not in nu_taken.keys():
+#                 nu_taken[num[i]] = 0
+#             if nu_taken[num[i]] < nu[num[i]] / 2.0:
+#                 p_use.append(pos[i])
+#                 n_use.append(num[i])
+#                 nu_taken[num[i]] += 1
 
-        cand = Atoms(num, p_use, cell=slab.get_cell(), pbc=slab.get_pbc())
-        tc = atoms_too_close(cand, blmin)
-        if tc:
-            continue
-        tc = atoms_too_close_two_sets(slab, cand, blmin)
+#         reflect = False
+#         # calculate the mirrored position and add these.
+#         pn = []
+#         for p in p_use:
+#             pt = p - 2.0 * np.dot(p - cm, n) * n
+#             if reflect:
+#                 pt = -pt + 2 * cm + 2 * n * np.dot(pt - cm, n)
+#             pn.append(pt)
 
-        if not changed and counter > n_tries // 2:
-            reflect = not reflect
-            changed = True
+#         n_use.extend(n_use)
+#         p_use.extend(pn)
 
-        tot = slab + cand
+#         # In the case of an uneven number of
+#         # atoms we need to add one extra
+#         for n in nu.keys():
+#             if nu[n] % 2 == 0:
+#                 continue
+#             while sum(n_use == n) > nu[n]:
+#                 for i in range(int(len(n_use) / 2), len(n_use)):
+#                     if n_use[i] == n:
+#                         del p_use[i]
+#                         del n_use[i]
+#                         break
+#             assert sum(n_use == n) == nu[n]
 
-    if counter == n_tries:
-        return atoms
-    return tot
+#         # Make sure we have the correct number of atoms
+#         # and rearrange the atoms so they are in the right order
+#         for i in range(len(n_use)):
+#             if num[i] == n_use[i]:
+#                 continue
+#             for j in range(i + 1, len(n_use)):
+#                 if n_use[j] == num[i]:
+#                     tn = n_use[i]
+#                     tp = p_use[i]
+#                     n_use[i] = n_use[j]
+#                     p_use[i] = p_use[j]
+#                     p_use[j] = tp
+#                     n_use[j] = tn
+
+#         cand = Atoms(num, p_use, cell=slab.get_cell(), pbc=slab.get_pbc())
+#         tc = atoms_too_close(cand, blmin)
+#         if tc:
+#             continue
+#         tc = atoms_too_close_two_sets(slab, cand, blmin)
+
+#         if not changed and counter > n_tries // 2:
+#             reflect = not reflect
+#             changed = True
+
+#         tot = slab + cand
+
+#     if counter == n_tries:
+#         return atoms
+#     return tot
