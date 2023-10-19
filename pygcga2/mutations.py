@@ -10,10 +10,10 @@ BOND_LENGTHS = dict(zip(chemical_symbols, covalent_radii))
 
 def mutation_atoms(atoms=None, dr_percent=0.2,
                    minimum_displacement=0.2,
-                   max_trial=500, verbosity=False, elements=None,bond_range=None):
+                   max_trial=500, verbosity=False, elements=None, bond_range=None):
     """
     :param atoms: atoms to be mutated
-    :param dr_percent: maximum distance in the pertubation
+    :param dr_percent: maximum distance in the perturbation
     :param minimum_displacement:
     :param max_trial: number of trials
     :param verbosity: output verbosity
