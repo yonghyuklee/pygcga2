@@ -208,7 +208,7 @@ def add_multiple_H(surface, bond_range=None, max_trial=50):
             upper.append(i)
     # get mean cluster xyz pos
 
-    h_num = random.randrange(len(upper))
+    h_num = random.randrange(len(upper)) + 1
     n_choose = np.random.choice(upper, h_num)
     for i, n in enumerate(n_choose):
         for _ in range(max_trial):
