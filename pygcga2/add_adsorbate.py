@@ -209,25 +209,35 @@ def add_multiple_H(surface, bond_range=None, max_trial=50):
     # get mean cluster xyz pos
 
     h_num = random.randrange(len(upper)) + 1
-    print(h_num)
     n_choose = np.random.choice(upper, h_num)
-    print(n_choose)
-    for i, n in enumerate(n_choose):
-        for _ in range(max_trial):
+    for _ in range(max_trial):
+        t = surface.copy()
+        for i, n in enumerate(n_choose):
             x = pos[n, 0] + np.random.normal(0, 0.4, 1)[0]
             y = pos[n, 1] + np.random.normal(0, 0.4, 1)[0]
             z = pos[n, 2] + np.abs(np.random.normal(0, 0.4, 1)[0])
-            t = surface.copy()
             t.append(Atom(symbol="H", position=[x, y, z], tag=(i+1)))
+        inspect = checkatoms(t, bond_range)
+        if inspect:
+            return t
+    raise NoReasonableStructureFound("No good structure found using randomize")
 
-            inspect = checkatoms(t, bond_range)
-            if inspect:
-                surface = t
-                print(surface)
-                break
-        raise NoReasonableStructureFound("No good structure found using randomize")
-    print(surface)
-    return surface
+    # for i, n in enumerate(n_choose):
+    #     for _ in range(max_trial):
+    #         x = pos[n, 0] + np.random.normal(0, 0.4, 1)[0]
+    #         y = pos[n, 1] + np.random.normal(0, 0.4, 1)[0]
+    #         z = pos[n, 2] + np.abs(np.random.normal(0, 0.4, 1)[0])
+    #         t = surface.copy()
+    #         t.append(Atom(symbol="H", position=[x, y, z], tag=(i+1)))
+
+    #         inspect = checkatoms(t, bond_range)
+    #         if inspect:
+    #             surface = t
+    #             print(surface)
+    #             break
+    #     raise NoReasonableStructureFound("No good structure found using randomize")
+    # print(surface)
+    # return surface
 
 def remove_separated_H(surface, bond_range=None):
     """
