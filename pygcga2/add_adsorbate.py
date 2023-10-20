@@ -223,10 +223,11 @@ def add_multiple_H(surface, bond_range=None, max_trial=50):
             inspect = checkatoms(t, bond_range)
             if inspect:
                 surface = t
+                print(surface)
                 break
         raise NoReasonableStructureFound("No good structure found using randomize")
-        
-    return t
+    print(surface)
+    return surface
 
 def remove_separated_H(surface, bond_range=None):
     """
