@@ -208,14 +208,21 @@ def add_multiple_H(surface, bond_range=None, max_trial=50):
             upper.append(i)
     # get mean cluster xyz pos
 
+    def get_bond_range(atom1, atom2):
+        try:
+            return bond_range[(atom1, atom2)]
+        except KeyError:
+            return bond_range[(atom2, atom1)]
+
     h_num = random.randrange(len(upper)) + 1
     n_choose = np.random.choice(upper, h_num)
     for _ in range(max_trial):
         t = surface.copy()
         for i, n in enumerate(n_choose):
-            x = pos[n, 0] + np.random.normal(0, 0.4, 1)[0]
-            y = pos[n, 1] + np.random.normal(0, 0.4, 1)[0]
-            z = pos[n, 2] + np.abs(np.random.normal(0, 0.4, 1)[0])
+            l_min = min(get_bond_range[surface[n].symbol(), "H"])
+            x = pos[n, 0] + np.random.normal(0, 0.4*l_min, 1)[0]
+            y = pos[n, 1] + np.random.normal(0, 0.4*l_min, 1)[0]
+            z = pos[n, 2] + np.abs(np.random.normal(0, 0.4*l_min, 1)[0])
             t.append(Atom(symbol="H", position=[x, y, z], tag=(i+1)))
         inspect = checkatoms(t, bond_range)
         if inspect:
