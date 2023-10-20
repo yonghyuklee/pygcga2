@@ -1,28 +1,27 @@
 #!/usr/bin/env python
 import re
 
-from collections.abc import Iterable
+# from collections.abc import Iterable
 import numpy as np
-import json
+# import json
 import random
-import itertools
+# import itertools
 from math import cos, sin, pi
-import numpy.ma as ma
-import random
+# import numpy.ma as ma
 
-from ase.io import read
+# from ase.io import read
 from ase import Atoms
 # from ase.build import molecule as ase_create_molecule
 from ase.data import covalent_radii, chemical_symbols
-from pygcga2.topology import Topology
-from pygcga2.checkatoms import CheckAtoms
-import sys, os
+# from pygcga2.topology import Topology
+# from pygcga2.checkatoms import CheckAtoms
+# import sys, os
 from pygcga2.utilities import NoReasonableStructureFound
 from ase.atom import Atom
-from ase.constraints import FixAtoms
-from ase.constraints import Hookean
-from ase.constraints import FixBondLengths
-from ase.constraints import FixedLine
+# from ase.constraints import FixAtoms
+# from ase.constraints import Hookean
+# from ase.constraints import FixBondLengths
+# from ase.constraints import FixedLine
 
 try:
     from ase.constraints import NeverDelete
@@ -31,15 +30,13 @@ except ImportError:
 from ase.neighborlist import NeighborList
 # from ase.neighborlist import neighbor_list
 from ase.neighborlist import natural_cutoffs
-import random
-import numpy as np
-from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
-from ase.md.verlet import VelocityVerlet
-from ase import units
-from pymatgen.io.lammps.data import LammpsData
-from pymatgen.io.ase import AseAtomsAdaptor
+# from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
+# from ase.md.verlet import VelocityVerlet
+# from ase import units
+# from pymatgen.io.lammps.data import LammpsData
+# from pymatgen.io.ase import AseAtomsAdaptor
 from ase.io import *
-from ase.io.trajectory import TrajectoryWriter
+# from ase.io.trajectory import TrajectoryWriter
 
 from ase.ga.utilities import (
     atoms_too_close,
@@ -129,8 +126,9 @@ def find_surf(atoms, el="Cu", mult=0.95, maxCN=12, minCN=5):
 
 def remove_H(atoms=None):
     H_ndx = [atom.index for atom in atoms if atom.symbol == "H"]
-    sel_ndx = random.choice(H_ndx)
-    del atoms[sel_ndx]
+    if len(H_ndx) != 0:
+        sel_ndx = random.choice(H_ndx)
+        del atoms[sel_ndx]
 
     # if symmetric slab
     # pos = atoms.get_positions()
@@ -197,6 +195,36 @@ def add_H(surface, bond_range=None, max_trial=50):
             return t
     raise NoReasonableStructureFound("No good structure found using randomize")
 
+def add_multiple_H(surface, bond_range=None, max_trial=50):
+    print("Running Add Multiple H Mutation")
+    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=11, minCN=0) + find_surf(surface, el="O", mult=0.85, maxCN=2, minCN=0)
+    
+    pos = surface.get_positions()
+    posz = pos[:, 2] # gets z positions of atoms in surface
+    posz_mid = np.average(posz)
+    upper = []
+    for i in surf_ind:
+        if surface[i].position[2] >= posz_mid:
+            upper.append(i)
+    # get mean cluster xyz pos
+
+    h_num = random.randrange(len(upper))
+    n_choose = np.random.choice(upper, h_num)
+    for i, n in enumerate(n_choose):
+        for _ in range(max_trial):
+            x = pos[n, 0] + np.random.normal(0, 0.4, 1)[0]
+            y = pos[n, 1] + np.random.normal(0, 0.4, 1)[0]
+            z = pos[n, 2] + np.abs(np.random.normal(0, 0.4, 1)[0])
+            t = surface.copy()
+            t.append(Atom(symbol="H", position=[x, y, z], tag=(i+1)))
+
+            inspect = checkatoms(t, bond_range)
+            if inspect:
+                surface = t
+                break
+        raise NoReasonableStructureFound("No good structure found using randomize")
+        
+    return t
 
 def remove_separated_H(surface, bond_range=None):
     """
