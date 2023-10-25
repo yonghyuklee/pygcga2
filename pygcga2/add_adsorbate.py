@@ -18,6 +18,7 @@ from ase.data import covalent_radii, chemical_symbols
 # import sys, os
 from pygcga2.utilities import NoReasonableStructureFound
 from ase.atom import Atom
+from ase.geometry.analysis import Analysis
 # from ase.constraints import FixAtoms
 # from ase.constraints import Hookean
 # from ase.constraints import FixBondLengths
@@ -75,13 +76,27 @@ def checkatoms(atoms, bond_range):
     _d = atoms.get_all_distances(mic=True)
     brange = {}
     for key, value in bond_range.items():
-        brange[frozenset(key)] = np.min(np.array(value))
+        brange[frozenset(key)] = [np.min(np.array(value)), np.max(np.array(value))]
     symbols = atoms.get_chemical_symbols()
     n = atoms.get_global_number_of_atoms()
+    nat_cut = natural_cutoffs(atoms, mult=1.5)
+    nl = NeighborList(nat_cut, self_interaction=False, bothways=True)
+    nl.update(atoms)
+    for a, atom in enumerate(atoms):
+        indices, offsets = nl.get_neighbors(a)
+        for i in indices:
+            dmax = max(brange[frozenset((atoms[a].symbol, atoms[i].symbol))])
+            if atoms.get_distance(a,i,mic=True) > dmax:
+                print(
+                        "bond of type {} is too long, {}, should be {} max".format(
+                            (atoms[a].symbol, atoms[i].symbol), atoms.get_distance(a,i,mic=True), dmax
+                        )
+                )
+                return False
     for i in range(n):
         for j in range(i + 1, n):
             k = (symbols[i], symbols[j])
-            dmin = brange[frozenset(k)]
+            dmin = min(brange[frozenset(k)])
             if _d[i][j] < dmin:
                 print(
                     "bond of type {} is too short, {}, should be {} min".format(
