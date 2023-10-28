@@ -166,7 +166,7 @@ def remove_H(atoms=None):
 def add_H(surface, bond_range=None, max_trial=50):
     print("Running Add H Mutation")
     # surf_ind = find_cluster_single_element(surface, el="Pt", maxCN=12, minCN=1)
-    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=11, minCN=0) + find_surf(surface, el="O", mult=0.85, maxCN=2, minCN=0)
+    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=2, minCN=1)
     
     pos = surface.get_positions()
     posz = pos[:, 2] # gets z positions of atoms in surface
@@ -177,28 +177,29 @@ def add_H(surface, bond_range=None, max_trial=50):
             upper.append(i)
     # get mean cluster xyz pos
 
-    for _ in range(max_trial):
-        n_choose = np.random.choice(upper)
-        theta = random.uniform(0, pi/2)
-        phi = random.uniform(0, 2*pi)
-        if surface[n_choose].symbol == 'Zr':
-            r = np.sqrt(2.0)
-            x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
-            y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
-            z = pos[n_choose, 2] + r * cos(theta)
-        elif surface[n_choose].symbol == 'O':
-            r = np.sqrt(1.0)
-            x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
-            y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
-            z = pos[n_choose, 2] + r * cos(theta)
-        else:
-            print(f"WARN: The mutation tries to add hydrogen at {surface[n_choose].symbol} atom!")
-            r = np.sqrt(1.5)
-            x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
-            y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
-            z = pos[n_choose, 2] + r * cos(theta)
-        t = surface.copy()
-        t.append(Atom(symbol="H", position=[x, y, z], tag=1))
+    if len(upper) != 0:
+        for _ in range(max_trial):
+            n_choose = np.random.choice(upper)
+            theta = random.uniform(0, pi/2)
+            phi = random.uniform(0, 2*pi)
+            if surface[n_choose].symbol == 'Zr':
+                r = np.sqrt(2.0)
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            elif surface[n_choose].symbol == 'O':
+                r = np.sqrt(1.0)
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            else:
+                print(f"WARN: The mutation tries to add hydrogen at {surface[n_choose].symbol} atom!")
+                r = np.sqrt(1.5)
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            t = surface.copy()
+            t.append(Atom(symbol="H", position=[x, y, z], tag=1))
 
     ## if symmetric slab
     # pos = surface.get_positions()
@@ -223,14 +224,17 @@ def add_H(surface, bond_range=None, max_trial=50):
     #     t = surface.copy()
     #     t.append(Atom(symbol="H", position=[xu, yu, zu], tag=1))
     #     t.append(Atom(symbol="H", position=[xl, yl, zl], tag=2))
-        inspect = checkatoms(t, bond_range)
-        if inspect:
-            return t
+            inspect = checkatoms(t, bond_range)
+            if inspect:
+                return t
+    else:
+        print("no more empty adsorption site in the current structure!")
+        return surface
     raise NoReasonableStructureFound("No good structure found using randomize")
 
 def add_multiple_H(surface, bond_range=None, max_trial=100):
     print("Running Add Multiple H Mutation")
-    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=11, minCN=0) + find_surf(surface, el="O", mult=0.85, maxCN=2, minCN=0)
+    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=2, minCN=1)
     
     pos = surface.get_positions()
     posz = pos[:, 2] # gets z positions of atoms in surface
@@ -241,34 +245,38 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
             upper.append(i)
     # get mean cluster xyz pos
 
-    h_num = random.randrange(len(upper)) + 1
-    print(f"Adding total {h_num} of H atoms")
-    n_choose = np.random.choice(upper, h_num)
-    for _ in range(max_trial):
-        t = surface.copy()
-        for i, n in enumerate(n_choose):
-            theta = random.uniform(0, pi/2)
-            phi = random.uniform(0, 2*pi)
-            if surface[n].symbol == 'Zr':
-                r = np.sqrt(2.0)
-                x = pos[n, 0] + r * sin(theta) * cos(phi)
-                y = pos[n, 1] + r * sin(theta) * sin(phi)
-                z = pos[n, 2] + r * cos(theta)
-            elif surface[n].symbol == 'O':
-                r = np.sqrt(1.0)
-                x = pos[n, 0] + r * sin(theta) * cos(phi)
-                y = pos[n, 1] + r * sin(theta) * sin(phi)
-                z = pos[n, 2] + r * cos(theta)
-            else:
-                print(f"WARN: The mutation tries to add hydrogen at {surface[n].symbol} atom!")
-                r = np.sqrt(1.5)
-                x = pos[n, 0] + r * sin(theta) * cos(phi)
-                y = pos[n, 1] + r * sin(theta) * sin(phi)
-                z = pos[n, 2] + r * cos(theta)
-            t.append(Atom(symbol="H", position=[x, y, z], tag=1))
-        inspect = checkatoms(t, bond_range)
-        if inspect:
-            return t
+    if len(upper) != 0:
+        h_num = random.randrange(len(upper)) + 1
+        print(f"Adding total {h_num} of H atoms")
+        n_choose = np.random.choice(upper, h_num)
+        for _ in range(max_trial):
+            t = surface.copy()
+            for i, n in enumerate(n_choose):
+                theta = random.uniform(0, pi/2)
+                phi = random.uniform(0, 2*pi)
+                if surface[n].symbol == 'Zr':
+                    r = np.sqrt(2.0)
+                    x = pos[n, 0] + r * sin(theta) * cos(phi)
+                    y = pos[n, 1] + r * sin(theta) * sin(phi)
+                    z = pos[n, 2] + r * cos(theta)
+                elif surface[n].symbol == 'O':
+                    r = np.sqrt(1.0)
+                    x = pos[n, 0] + r * sin(theta) * cos(phi)
+                    y = pos[n, 1] + r * sin(theta) * sin(phi)
+                    z = pos[n, 2] + r * cos(theta)
+                else:
+                    print(f"WARN: The mutation tries to add hydrogen at {surface[n].symbol} atom!")
+                    r = np.sqrt(1.5)
+                    x = pos[n, 0] + r * sin(theta) * cos(phi)
+                    y = pos[n, 1] + r * sin(theta) * sin(phi)
+                    z = pos[n, 2] + r * cos(theta)
+                t.append(Atom(symbol="H", position=[x, y, z], tag=1))
+            inspect = checkatoms(t, bond_range)
+            if inspect:
+                return t
+    else:
+        print("no more empty adsorption site in the current structure!")
+        return surface
     raise NoReasonableStructureFound("No good structure found using randomize")
 
     # for i, n in enumerate(n_choose):
