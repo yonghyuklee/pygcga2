@@ -170,7 +170,10 @@ def add_H(surface, bond_range=None, max_trial=50):
     
     pos = surface.get_positions()
     posz = pos[:, 2] # gets z positions of atoms in surface
-    posz_mid = np.average(posz)
+    posz_max = np.max(posz)
+    posz_min = np.min(posz)
+    slab_thick = posz_max - posz_min
+    posz_mid = np.average(posz) + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
         if surface[i].position[2] >= posz_mid:
@@ -238,7 +241,10 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
     
     pos = surface.get_positions()
     posz = pos[:, 2] # gets z positions of atoms in surface
-    posz_mid = np.average(posz)
+    posz_max = np.max(posz)
+    posz_min = np.min(posz)
+    slab_thick = posz_max - posz_min
+    posz_mid = np.average(posz) + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
         if surface[i].position[2] >= posz_mid:
