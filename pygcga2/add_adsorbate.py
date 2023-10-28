@@ -79,13 +79,13 @@ def checkatoms(atoms, bond_range):
         brange[frozenset(key)] = [np.min(np.array(value)), np.max(np.array(value))]
     symbols = atoms.get_chemical_symbols()
     n = atoms.get_global_number_of_atoms()
-    nat_cut = natural_cutoffs(atoms, mult=1.5)
+    nat_cut = natural_cutoffs(atoms, mult=0.8)
     nl = NeighborList(nat_cut, self_interaction=False, bothways=True)
     nl.update(atoms)
     for a, atom in enumerate(atoms):
         indices, offsets = nl.get_neighbors(a)
         for i in indices:
-            dmax = max(brange[frozenset((atoms[a].symbol, atoms[i].symbol))])
+            dmax = max(brange[frozenset((atom.symbol, atoms[i].symbol))])
             if atoms.get_distance(a,i,mic=True) > dmax:
                 print(
                         "bond of type {} is too long, {}, should be {} max".format(
@@ -144,6 +144,8 @@ def remove_H(atoms=None):
     if len(H_ndx) != 0:
         sel_ndx = random.choice(H_ndx)
         del atoms[sel_ndx]
+    else:
+        print("no hydrogen atom present in the current structure!")
 
     # if symmetric slab
     # pos = atoms.get_positions()
@@ -174,15 +176,31 @@ def add_H(surface, bond_range=None, max_trial=50):
         if surface[i].position[2] >= posz_mid:
             upper.append(i)
     # get mean cluster xyz pos
+
     for _ in range(max_trial):
         n_choose = np.random.choice(upper)
-        x = pos[n_choose, 0] + np.random.normal(0, 0.4, 1)[0]
-        y = pos[n_choose, 1] + np.random.normal(0, 0.4, 1)[0]
-        z = pos[n_choose, 2] + np.abs(np.random.normal(0, 0.4, 1)[0])
+        theta = random.uniform(0, pi/2)
+        phi = random.uniform(0, 2*pi)
+        if surface[n_choose].symbol == 'Zr':
+            r = np.sqrt(2.0)
+            x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+            y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+            z = pos[n_choose, 2] + r * cos(theta)
+        elif surface[n_choose].symbol == 'O':
+            r = np.sqrt(1.0)
+            x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+            y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+            z = pos[n_choose, 2] + r * cos(theta)
+        else:
+            print(f"WARN: The mutation tries to add hydrogen at {surface[n_choose].symbol} atom!")
+            r = np.sqrt(1.5)
+            x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+            y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+            z = pos[n_choose, 2] + r * cos(theta)
         t = surface.copy()
         t.append(Atom(symbol="H", position=[x, y, z], tag=1))
 
-    # if symmetric slab
+    ## if symmetric slab
     # pos = surface.get_positions()
     # posz = pos[:, 2] # gets z positions of atoms in surface
     # posz_mid = np.average(posz)
@@ -210,7 +228,7 @@ def add_H(surface, bond_range=None, max_trial=50):
             return t
     raise NoReasonableStructureFound("No good structure found using randomize")
 
-def add_multiple_H(surface, bond_range=None, max_trial=50):
+def add_multiple_H(surface, bond_range=None, max_trial=100):
     print("Running Add Multiple H Mutation")
     surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=11, minCN=0) + find_surf(surface, el="O", mult=0.85, maxCN=2, minCN=0)
     
@@ -223,22 +241,31 @@ def add_multiple_H(surface, bond_range=None, max_trial=50):
             upper.append(i)
     # get mean cluster xyz pos
 
-    def get_bond_range(atom1, atom2):
-        try:
-            return bond_range[(atom1, atom2)]
-        except KeyError:
-            return bond_range[(atom2, atom1)]
-
     h_num = random.randrange(len(upper)) + 1
+    print(f"Adding total {h_num} of H atoms")
     n_choose = np.random.choice(upper, h_num)
     for _ in range(max_trial):
         t = surface.copy()
         for i, n in enumerate(n_choose):
-            l_min = min(get_bond_range(surface[n].symbol, "H"))
-            x = pos[n, 0] + np.random.normal(0, 1.4*l_min, 1)[0]
-            y = pos[n, 1] + np.random.normal(0, 1.4*l_min, 1)[0]
-            z = pos[n, 2] + np.abs(np.random.normal(0, 1.4*l_min, 1)[0])
-            t.append(Atom(symbol="H", position=[x, y, z], tag=(i+1)))
+            theta = random.uniform(0, pi/2)
+            phi = random.uniform(0, 2*pi)
+            if surface[n].symbol == 'Zr':
+                r = np.sqrt(2.0)
+                x = pos[n, 0] + r * sin(theta) * cos(phi)
+                y = pos[n, 1] + r * sin(theta) * sin(phi)
+                z = pos[n, 2] + r * cos(theta)
+            elif surface[n].symbol == 'O':
+                r = np.sqrt(1.0)
+                x = pos[n, 0] + r * sin(theta) * cos(phi)
+                y = pos[n, 1] + r * sin(theta) * sin(phi)
+                z = pos[n, 2] + r * cos(theta)
+            else:
+                print(f"WARN: The mutation tries to add hydrogen at {surface[n].symbol} atom!")
+                r = np.sqrt(1.5)
+                x = pos[n, 0] + r * sin(theta) * cos(phi)
+                y = pos[n, 1] + r * sin(theta) * sin(phi)
+                z = pos[n, 2] + r * cos(theta)
+            t.append(Atom(symbol="H", position=[x, y, z], tag=1))
         inspect = checkatoms(t, bond_range)
         if inspect:
             return t
