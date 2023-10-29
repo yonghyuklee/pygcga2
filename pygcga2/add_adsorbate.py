@@ -254,8 +254,8 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
     if len(upper) != 0:
         h_num = random.randrange(len(upper)) + 1
         print(f"Adding total {h_num} of H atoms")
-        n_choose = np.random.choice(upper, h_num)
         for _ in range(max_trial):
+            n_choose = np.random.choice(upper, h_num)
             t = surface.copy()
             for i, n in enumerate(n_choose):
                 theta = random.uniform(0, pi/2)
