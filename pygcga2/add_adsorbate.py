@@ -232,8 +232,8 @@ def add_H(surface, bond_range=None, max_trial=50):
                 return t
     else:
         print("no more empty adsorption site in the current structure!")
-        return surface
-    raise NoReasonableStructureFound("No good structure found using randomize")
+        raise NoReasonableStructureFound("No good structure found using add_H")
+    raise NoReasonableStructureFound("No good structure found using add_H")
 
 def add_multiple_H(surface, bond_range=None, max_trial=100):
     print("Running Add Multiple H Mutation")
@@ -282,8 +282,8 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
                 return t
     else:
         print("no more empty adsorption site in the current structure!")
-        return surface
-    raise NoReasonableStructureFound("No good structure found using randomize")
+        raise NoReasonableStructureFound("No good structure found using add_multiple_H")
+    raise NoReasonableStructureFound("No good structure found using add_multiple_H")
 
     # for i, n in enumerate(n_choose):
     #     for _ in range(max_trial):
