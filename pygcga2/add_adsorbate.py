@@ -166,7 +166,7 @@ def remove_H(atoms=None):
 def add_H(surface, bond_range=None, max_trial=50):
     print("Running Add H Mutation")
     # surf_ind = find_cluster_single_element(surface, el="Pt", maxCN=12, minCN=1)
-    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=2, minCN=1)
+    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=3, minCN=1)
     
     pos = surface.get_positions()
     posz = pos[:, 2] # gets z positions of atoms in surface
@@ -176,8 +176,12 @@ def add_H(surface, bond_range=None, max_trial=50):
     posz_mid = np.average(posz) + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
-        if surface[i].position[2] >= posz_mid:
-            upper.append(i)
+        if surface[i].symbol == 'Zr':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+        elif surface[i].symbol == 'O':
+            if surface[i].position[2] >= posz_max - 0.15 * slab_thick:
+                upper.append(i)
     # get mean cluster xyz pos
 
     if len(upper) != 0:
@@ -237,7 +241,7 @@ def add_H(surface, bond_range=None, max_trial=50):
 
 def add_multiple_H(surface, bond_range=None, max_trial=100):
     print("Running Add Multiple H Mutation")
-    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=2, minCN=1)
+    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=3, minCN=1)
     
     pos = surface.get_positions()
     posz = pos[:, 2] # gets z positions of atoms in surface
@@ -247,8 +251,12 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
     posz_mid = np.average(posz) + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
-        if surface[i].position[2] >= posz_mid:
-            upper.append(i)
+        if surface[i].symbol == 'Zr':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+        elif surface[i].symbol == 'O':
+            if surface[i].position[2] >= posz_max - 0.15 * slab_thick:
+                upper.append(i)
     # get mean cluster xyz pos
 
     if len(upper) != 0:
