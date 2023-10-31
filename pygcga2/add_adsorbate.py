@@ -163,6 +163,27 @@ def remove_H(atoms=None):
 
     return atoms
 
+def remove_O(atoms=None):
+    O_ndx = [atom.index for atom in atoms if atom.symbol == "O"]
+    pos = atoms.get_positions()
+    posz = pos[:, 2] # gets z positions of atoms in surface
+    posz_max = np.max(posz)
+    posz_min = np.min(posz)
+    slab_thick = posz_max - posz_min
+    posz_lim = posz_max - 0.15 * slab_thick
+    upper = []
+    for i in O_ndx:
+        if atoms[i].position[2] >= posz_lim:
+            upper.append(i)
+    
+    if len(upper) != 0:
+        sel_ndx = random.choice(upper)
+        del atoms[sel_ndx]
+    else:
+        print("no surface oxygen atom present in the current structure!")
+
+    return atoms
+
 def add_H(surface, bond_range=None, max_trial=50):
     print("Running Add H Mutation")
     # surf_ind = find_cluster_single_element(surface, el="Pt", maxCN=12, minCN=1)

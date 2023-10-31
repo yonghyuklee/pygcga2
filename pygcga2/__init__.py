@@ -14,6 +14,7 @@ from .add_adsorbate import find_surf
 # from .add_adsorbate import add_CO
 # from .add_adsorbate import remove_CO
 from .add_adsorbate import remove_H
+from .add_adsorbate import remove_O
 from .add_adsorbate import add_H
 from .add_adsorbate import add_O
 from .add_adsorbate import add_multiple_H
