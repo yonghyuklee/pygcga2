@@ -310,6 +310,81 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
     # print(surface)
     # return surface
 
+def add_O(surface, bond_range=None, max_trial=50):
+    print("Running Add O Mutation")
+    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1)
+    
+    pos = surface.get_positions()
+    posz = pos[:, 2] # gets z positions of atoms in surface
+    posz_max = np.max(posz)
+    posz_min = np.min(posz)
+    slab_thick = posz_max - posz_min
+    posz_mid = np.average(posz) + 0.2 * slab_thick
+    upper = []
+    for i in surf_ind:
+        if surface[i].symbol == 'Zr':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+        elif surface[i].symbol == 'O':
+            if surface[i].position[2] >= posz_max - 0.15 * slab_thick:
+                upper.append(i)
+    # get mean cluster xyz pos
+
+    if len(upper) != 0:
+        for _ in range(max_trial):
+            n_choose = np.random.choice(upper)
+            theta = random.uniform(0, pi/2)
+            phi = random.uniform(0, 2*pi)
+            if surface[n_choose].symbol == 'Zr':
+                r = np.sqrt(2.2)
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            elif surface[n_choose].symbol == 'O':
+                r = np.sqrt(1.4)
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            else:
+                print(f"WARN: The mutation tries to add oxygen at {surface[n_choose].symbol} atom!")
+                r = np.sqrt(1.5)
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            t = surface.copy()
+            t.append(Atom(symbol="O", position=[x, y, z], tag=1))
+
+    ## if symmetric slab
+    # pos = surface.get_positions()
+    # posz = pos[:, 2] # gets z positions of atoms in surface
+    # posz_mid = np.average(posz)
+    # upper, lower = [], []
+    # for i in surf_ind:
+    #     if surface[i].position[2] >= posz_mid:
+    #         upper.append(i)
+    #     else:
+    #         lower.append(i)
+    # # get mean cluster xyz pos
+    # for _ in range(max_trial):
+    #     n_choose_u = np.random.choice(upper)
+    #     n_choose_l = np.random.choice(lower)
+    #     xu = pos[n_choose_u, 0] + np.random.normal(0, 0.4, 1)[0]
+    #     yu = pos[n_choose_u, 1] + np.random.normal(0, 0.4, 1)[0]
+    #     zu = pos[n_choose_u, 2] + np.abs(np.random.normal(0, 0.4, 1)[0])
+    #     xl = pos[n_choose_l, 0] + np.random.normal(0, 0.4, 1)[0]
+    #     yl = pos[n_choose_l, 1] + np.random.normal(0, 0.4, 1)[0]
+    #     zl = pos[n_choose_l, 2] - np.abs(np.random.normal(0, 0.8, 1)[0])
+    #     t = surface.copy()
+    #     t.append(Atom(symbol="H", position=[xu, yu, zu], tag=1))
+    #     t.append(Atom(symbol="H", position=[xl, yl, zl], tag=2))
+            inspect = checkatoms(t, bond_range)
+            if inspect:
+                return t
+    else:
+        print("no more empty adsorption site in the current structure!")
+        raise NoReasonableStructureFound("No good structure found using add_O")
+    raise NoReasonableStructureFound("No good structure found using add_O")
+
 def remove_separated_H(surface, bond_range=None):
     """
     Remove H atoms that aren't bonded to anything else. This removes the first instance of this happening in a frame
