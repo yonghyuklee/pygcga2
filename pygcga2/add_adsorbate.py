@@ -201,7 +201,7 @@ def add_H(surface, bond_range=None, max_trial=50):
             if surface[i].position[2] >= posz_mid:
                 upper.append(i)
         elif surface[i].symbol == 'O':
-            if surface[i].position[2] >= posz_max - 0.15 * slab_thick:
+            if surface[i].position[2] >= posz_mid:
                 upper.append(i)
     # get mean cluster xyz pos
 
@@ -347,7 +347,7 @@ def add_O(surface, bond_range=None, max_trial=50):
             if surface[i].position[2] >= posz_mid:
                 upper.append(i)
         elif surface[i].symbol == 'O':
-            if surface[i].position[2] >= posz_max - 0.15 * slab_thick:
+            if surface[i].position[2] >= posz_mid:
                 upper.append(i)
     # get mean cluster xyz pos
 
