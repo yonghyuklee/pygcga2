@@ -194,7 +194,7 @@ def add_H(surface, bond_range=None, max_trial=50):
     posz_max = np.max(posz)
     posz_min = np.min(posz)
     slab_thick = posz_max - posz_min
-    posz_mid = np.average(posz) + 0.2 * slab_thick
+    posz_mid = np.average(posz) # + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr':
@@ -269,14 +269,14 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
     posz_max = np.max(posz)
     posz_min = np.min(posz)
     slab_thick = posz_max - posz_min
-    posz_mid = np.average(posz) + 0.2 * slab_thick
+    posz_mid = np.average(posz) # + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr':
             if surface[i].position[2] >= posz_mid:
                 upper.append(i)
         elif surface[i].symbol == 'O':
-            if surface[i].position[2] >= posz_max - 0.15 * slab_thick:
+            if surface[i].position[2] >= posz_mid:
                 upper.append(i)
     # get mean cluster xyz pos
 
@@ -340,7 +340,7 @@ def add_O(surface, bond_range=None, max_trial=50):
     posz_max = np.max(posz)
     posz_min = np.min(posz)
     slab_thick = posz_max - posz_min
-    posz_mid = np.average(posz) + 0.2 * slab_thick
+    posz_mid = np.average(posz) # + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr':
