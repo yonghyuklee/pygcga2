@@ -5,11 +5,9 @@ import re
 import numpy as np
 # import json
 import random
-# import itertools
 from math import cos, sin, pi
 # import numpy.ma as ma
 
-# from ase.io import read
 from ase import Atoms
 # from ase.build import molecule as ase_create_molecule
 from ase.data import covalent_radii, chemical_symbols
@@ -18,7 +16,7 @@ from ase.data import covalent_radii, chemical_symbols
 # import sys, os
 from pygcga2.utilities import NoReasonableStructureFound
 from ase.atom import Atom
-from ase.geometry.analysis import Analysis
+# from ase.geometry.analysis import Analysis
 # from ase.constraints import FixAtoms
 # from ase.constraints import Hookean
 # from ase.constraints import FixBondLengths
@@ -39,14 +37,14 @@ from ase.neighborlist import natural_cutoffs
 from ase.io import *
 # from ase.io.trajectory import TrajectoryWriter
 
-from ase.ga.utilities import (
-    atoms_too_close,
-    atoms_too_close_two_sets,
+# from ase.ga.utilities import (
+    # atoms_too_close,
+    # atoms_too_close_two_sets,
     # gather_atoms_by_tag,
     # get_rotation_matrix,
-    get_all_atom_types,
-    closest_distances_generator,
-)
+    # get_all_atom_types,
+    # closest_distances_generator,
+# )
 
 BOND_LENGTHS = dict(zip(chemical_symbols, covalent_radii))
 debug_verbosity = True
