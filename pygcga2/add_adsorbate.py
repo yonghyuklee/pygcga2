@@ -9,7 +9,7 @@ from math import cos, sin, pi
 # import numpy.ma as ma
 
 from ase import Atoms
-# from ase.build import molecule as ase_create_molecule
+from ase.build import molecule as ase_create_molecule
 from ase.data import covalent_radii, chemical_symbols
 # from pygcga2.topology import Topology
 # from pygcga2.checkatoms import CheckAtoms
@@ -26,9 +26,7 @@ try:
     from ase.constraints import NeverDelete
 except ImportError:
     NeverDelete = type(None)
-from ase.neighborlist import NeighborList
-# from ase.neighborlist import neighbor_list
-from ase.neighborlist import natural_cutoffs
+from ase.neighborlist import NeighborList, natural_cutoffs
 # from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 # from ase.md.verlet import VelocityVerlet
 # from ase import units
@@ -331,7 +329,7 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
 
 def add_O(surface, bond_range=None, max_trial=50):
     print("Running Add O Mutation")
-    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1)
+    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=3, minCN=1)
     
     pos = surface.get_positions()
     posz = pos[:, 2] # gets z positions of atoms in surface
@@ -396,6 +394,62 @@ def add_O(surface, bond_range=None, max_trial=50):
     #     t = surface.copy()
     #     t.append(Atom(symbol="H", position=[xu, yu, zu], tag=1))
     #     t.append(Atom(symbol="H", position=[xl, yl, zl], tag=2))
+            inspect = checkatoms(t, bond_range)
+            if inspect:
+                return t
+    else:
+        print("no more empty adsorption site in the current structure!")
+        raise NoReasonableStructureFound("No good structure found using add_O")
+    raise NoReasonableStructureFound("No good structure found using add_O")
+
+def add_OH(surface, bond_range=None, max_trial=50):
+    print("Running Add OH Mutation")
+    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=3, minCN=1)
+    
+    pos = surface.get_positions()
+    posz = pos[:, 2] # gets z positions of atoms in surface
+    # posz_max = np.max(posz)
+    posz_min = np.min(posz)
+    # slab_thick = posz_max - posz_min
+    posz_mid = posz_min + 5 # np.average(posz) # + 0.2 * slab_thick
+    upper = []
+    for i in surf_ind:
+        if surface[i].symbol == 'Zr':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+        elif surface[i].symbol == 'O':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+    # get mean cluster xyz pos
+
+    if len(upper) != 0:
+        for _ in range(max_trial):
+            n_choose = np.random.choice(upper)
+            theta = random.uniform(0, pi/2)
+            phi = random.uniform(0, 2*pi)
+            if surface[n_choose].symbol == 'Zr':
+                r = np.sqrt(2.2)
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            elif surface[n_choose].symbol == 'O':
+                r = np.sqrt(1.4)
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            else:
+                print(f"WARN: The mutation tries to add oxygen at {surface[n_choose].symbol} atom!")
+                r = np.sqrt(1.5)
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            t = surface.copy()
+            t.append(Atom(symbol="O", position=[x, y, z], tag=1))
+            dir_array = np.array([x - pos[n_choose, 0], y - pos[n_choose, 1], z - pos[n_choose, 2]])
+            norm_vec = dir_array / np.linalg.norm(dir_array)
+            H_pos = np.array([x, y, z]) + norm_vec * 0.97907
+            t.append(Atom(symbol="H", position=H_pos, tag=1))
+
             inspect = checkatoms(t, bond_range)
             if inspect:
                 return t

@@ -18,6 +18,7 @@ from .add_adsorbate import remove_O
 from .add_adsorbate import add_H
 from .add_adsorbate import add_O
 from .add_adsorbate import add_multiple_H
+from .add_adsorbate import add_OH
 # from .add_adsorbate import move_CO
 # from .add_adsorbate import add_h_gas
 # from .initial import initial_structure_gen
