@@ -190,7 +190,7 @@ def add_H(surface, bond_range=None, max_trial=50):
     # posz_max = np.max(posz)
     posz_min = np.min(posz)
     # slab_thick = posz_max - posz_min
-    posz_mid = posz_min + 5 # np.average(posz) # + 0.2 * slab_thick
+    posz_mid = np.average(posz) # + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr':
@@ -265,7 +265,7 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
     # posz_max = np.max(posz)
     posz_min = np.min(posz)
     # slab_thick = posz_max - posz_min
-    posz_mid = posz_min + 5 # np.average(posz) # + 0.2 * slab_thick
+    posz_mid = np.average(posz) # + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr':
@@ -336,7 +336,7 @@ def add_O(surface, bond_range=None, max_trial=50):
     # posz_max = np.max(posz)
     posz_min = np.min(posz)
     # slab_thick = posz_max - posz_min
-    posz_mid = posz_min + 5 # np.average(posz) # + 0.2 * slab_thick
+    posz_mid = np.average(posz) # + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr':
@@ -411,7 +411,7 @@ def add_OH(surface, bond_range=None, max_trial=50):
     # posz_max = np.max(posz)
     posz_min = np.min(posz)
     # slab_thick = posz_max - posz_min
-    posz_mid = posz_min + 5 # np.average(posz) # + 0.2 * slab_thick
+    posz_mid = np.average(posz) # + 0.2 * slab_thick
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr':
