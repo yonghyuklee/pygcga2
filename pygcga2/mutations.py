@@ -1,7 +1,7 @@
 from ase.data import covalent_radii, chemical_symbols
 import numpy as np
-from pygcga.checkatoms import CheckAtoms
-from pygcga.utilities import NoReasonableStructureFound
+from pygcga2.checkatoms import CheckAtoms
+from pygcga2.utilities import NoReasonableStructureFound
 from ase.constraints import FixBondLengths, FixedLine
 
 
@@ -120,4 +120,102 @@ def rotate_subgroup_atoms(atoms, subgroups, axis_index1, axis_index2, theta):
     atoms.set_constraint(constraints)
 
 
+def cluster_random_perturbation(atoms=None, dr_percent=1.0,
+                                minimum_displacement=1.0,
+                                max_trial=500, verbosity=False,
+                                elements=['Cu', 'Pd'], bond_range=None):
+    """
+    :param atoms: atoms to be mutated
+    :param dr_percent: maximum distance in the perturbation
+    :param minimum_displacement:
+    :param max_trial: number of trials
+    :param verbosity: output verbosity
+    :param elements: which elements to be perturbed
+    :return:
+    """
+    if atoms is None:
+        raise RuntimeError("You are mutating a None type")
 
+    frozed_indexes=[]
+    for c in atoms.constraints:
+        if isinstance(c, FixBondLengths):
+            for indi in c.get_indices():
+                frozed_indexes.append(indi)
+        elif isinstance(c, FixedLine):
+            for indi in c.get_indices():
+                frozed_indexes.append(indi)
+    symbols = atoms.get_chemical_symbols()
+    if elements is None:
+        move_elements = list(set(symbols))
+    else:
+        move_elements = elements[:]
+    atoms_checker = CheckAtoms(min_bond=0.5, max_bond=2.0, verbosity=verbosity, bond_range=bond_range)
+    for _ in range(max_trial):
+        # copy method would copy the constraints too
+        a = atoms.copy()
+        p0 = a.get_positions()
+        dx = np.zeros(shape=p0.shape)
+        for j, sj in enumerate(symbols):
+            if sj not in move_elements:
+                continue
+            elif j in frozed_indexes:
+                continue
+            else:
+                rmax = max([BOND_LENGTHS[sj] * dr_percent, minimum_displacement])
+                dx[j] = rmax*np.random.uniform(low=-1.0, high=1.0, size=3)
+        a.set_positions(p0+dx) # set_positions method would not change the positions of fixed atoms
+        if atoms_checker.is_good(a, quickanswer=True):
+            return a
+        else:
+            continue
+    raise NoReasonableStructureFound("No reasonable structure found when mutate atoms")
+
+
+def cluster_random_displacement(atoms=None,
+                                max_trial=500, verbosity=False,
+                                elements=['Cu', 'Pd'], bond_range=None):
+    """
+    :param atoms: atoms to be mutated
+    :param max_trial: number of trials
+    :param verbosity: output verbosity
+    :param elements: which elements to be displaced
+    :return:
+    """
+    if atoms is None:
+        raise RuntimeError("You are mutating a None type")
+
+    frozed_indexes=[]
+    for c in atoms.constraints:
+        if isinstance(c, FixBondLengths):
+            for indi in c.get_indices():
+                frozed_indexes.append(indi)
+        elif isinstance(c, FixedLine):
+            for indi in c.get_indices():
+                frozed_indexes.append(indi)
+    symbols = atoms.get_chemical_symbols()
+    Rx, Ry = atoms.cell[0][0], atoms.cell[1][1]
+    rx, ry = np.random.uniform(0, Rx), np.random.uniform(0, Ry)
+    rz = np.random.uniform(-1.0, 1.0)
+    if elements is None:
+        move_elements = list(set(symbols))
+    else:
+        move_elements = elements[:]
+    atoms_checker = CheckAtoms(min_bond=0.5, max_bond=2.0, verbosity=verbosity, bond_range=bond_range)
+    for _ in range(max_trial):
+        # copy method would copy the constraints too
+        a = atoms.copy()
+        p0 = a.get_positions()
+        dx = np.zeros(shape=p0.shape)
+        for j, sj in enumerate(symbols):
+            if sj not in move_elements:
+                continue
+            elif j in frozed_indexes:
+                continue
+            else:
+                dx[j] = np.array([rx, ry, rz])
+        a.set_positions(p0+dx) # set_positions method would not change the positions of fixed atoms
+        if atoms_checker.is_good(a, quickanswer=True):
+            return a
+        else:
+            continue
+    raise NoReasonableStructureFound("No reasonable structure found when mutate atoms")

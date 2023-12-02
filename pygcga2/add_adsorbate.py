@@ -223,7 +223,7 @@ def add_H(surface, bond_range=None, max_trial=50):
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
             t = surface.copy()
-            t.append(Atom(symbol="H", position=[x, y, z], tag=1))
+            t.append(Atom(symbol="H", position=[x, y, z]))
 
     ## if symmetric slab
     # pos = surface.get_positions()
@@ -301,7 +301,7 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
                     x = pos[n, 0] + r * sin(theta) * cos(phi)
                     y = pos[n, 1] + r * sin(theta) * sin(phi)
                     z = pos[n, 2] + r * cos(theta)
-                t.append(Atom(symbol="H", position=[x, y, z], tag=1))
+                t.append(Atom(symbol="H", position=[x, y, z]))
             inspect = checkatoms(t, bond_range)
             if inspect:
                 return t
@@ -369,7 +369,7 @@ def add_O(surface, bond_range=None, max_trial=50):
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
             t = surface.copy()
-            t.append(Atom(symbol="O", position=[x, y, z], tag=1))
+            t.append(Atom(symbol="O", position=[x, y, z]))
 
     ## if symmetric slab
     # pos = surface.get_positions()
@@ -444,19 +444,19 @@ def add_OH(surface, bond_range=None, max_trial=50):
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
             t = surface.copy()
-            t.append(Atom(symbol="O", position=[x, y, z], tag=1))
+            t.append(Atom(symbol="O", position=[x, y, z]))
             dir_array = np.array([x - pos[n_choose, 0], y - pos[n_choose, 1], z - pos[n_choose, 2]])
             norm_vec = dir_array / np.linalg.norm(dir_array)
             H_pos = np.array([x, y, z]) + norm_vec * 0.97907
-            t.append(Atom(symbol="H", position=H_pos, tag=1))
+            t.append(Atom(symbol="H", position=H_pos))
 
             inspect = checkatoms(t, bond_range)
             if inspect:
                 return t
     else:
         print("no more empty adsorption site in the current structure!")
-        raise NoReasonableStructureFound("No good structure found using add_O")
-    raise NoReasonableStructureFound("No good structure found using add_O")
+        raise NoReasonableStructureFound("No good structure found using add_OH")
+    raise NoReasonableStructureFound("No good structure found using add_OH")
 
 def remove_separated_H(surface, bond_range=None):
     """
@@ -502,6 +502,71 @@ def randomize_all(surface, dr, bond_range, max_trial=10):
             return t
 
     raise NoReasonableStructureFound("No good structure found using randomize")
+
+def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=50):
+    print("Running Add Cluster")
+    surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=3, minCN=1)
+    
+    pos = surface.get_positions()
+    posz = pos[:, 2] # gets z positions of atoms in surface
+    posz_max = np.max(posz)
+    posz_mid = posz_max - 2 # np.average(posz)
+    upper = []
+    for i in surf_ind:
+        if surface[i].symbol == 'Zr':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+        elif surface[i].symbol == 'O':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+    # get mean cluster xyz pos
+
+    if len(upper) != 0:
+        while True:
+            for _ in range(max_trial):
+                n_choose = np.random.choice(upper, size=sum(element.values()))
+                random.shuffle(n_choose)
+                t = surface.copy()
+                for key, value in element.items():
+                    for n in n_choose[:value]:
+                        print(n_choose)
+                        # print(n)
+                        theta = random.uniform(0, pi/2)
+                        phi = random.uniform(0, 2*pi)
+                        # print(trial)
+                        if surface[n].symbol == 'Zr':
+                            # bl = random.uniform(2.4, 2.6)
+                            # r = np.sqrt(bl)
+                            r = np.sqrt(2.8)
+                            x = pos[n, 0] + r * sin(theta) * cos(phi)
+                            y = pos[n, 1] + r * sin(theta) * sin(phi)
+                            z = pos[n, 2] + r * cos(theta)
+                        elif surface[n].symbol == 'O':
+                            # bl = random.uniform(1.7, 1.8)
+                            # r = np.sqrt(bl)
+                            r = np.sqrt(2.0)
+                            x = pos[n, 0] + r * sin(theta) * cos(phi)
+                            y = pos[n, 1] + r * sin(theta) * sin(phi)
+                            z = pos[n, 2] + r * cos(theta)
+                        else:
+                            print(f"WARN: The mutation tries to add {key} at {surface[n].symbol} atom!")
+                            r = np.sqrt(1.5)
+                            x = pos[n, 0] + r * sin(theta) * cos(phi)
+                            y = pos[n, 1] + r * sin(theta) * sin(phi)
+                            z = pos[n, 2] + r * cos(theta)
+                        t.append(Atom(symbol=key, position=[x, y, z], tag=1))
+                    n_choose = n_choose[value:]
+
+                inspect = checkatoms(t, bond_range)
+                if inspect:
+                    return t
+            else:
+                break
+
+    else:
+        print("no more empty adsorption site in the current structure!")
+        raise NoReasonableStructureFound("No good structure found using add cluster")
+    raise NoReasonableStructureFound("No good structure found using add cluster")
 
 # def generate_H_site(r0, distance=None, width=None, center_of_mass=None):
 #     """

@@ -9,7 +9,7 @@ from networkx.algorithms.components import connected_components
 
 
 class CheckAtoms(object):
-    def __init__(self, max_bond=4, min_bond=3,
+    def __init__(self, max_bond=4, min_bond=1,
                  verbosity=False,
                  check_close_contact=True,
                  check_connectivity=True,
@@ -43,7 +43,7 @@ class CheckAtoms(object):
     def _build_graph(self, atoms):
         _d = atoms.get_all_distances(mic=self.mic)
         symbols = atoms.get_chemical_symbols()
-        n = atoms.get_number_of_atoms()
+        n = len(atoms)
         self.G = nx.Graph()
         self.G.add_nodes_from(range(n))
         self.results['close_contact'] = False
