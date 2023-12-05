@@ -204,7 +204,17 @@ def cluster_random_displacement(atoms=None,
     for _ in range(max_trial):
         # copy method would copy the constraints too
         a = atoms.copy()
-        p0 = a.get_positions()
+        c = atoms.copy()
+        cluster, substrate = [], []
+        for ai in a:
+            if ai.symbol in move_elements:
+                cluster.append(ai.index)
+            else:
+                substrate.append(ai.index)
+        del a[cluster]
+        del c[substrate]
+        symbols = c.get_chemical_symbols()
+        p0 = c.get_positions()
         Rx, Ry = atoms.cell[0][0], atoms.cell[1][1]
         rx, ry = np.random.uniform(0, Rx), np.random.uniform(0, Ry)
         rz = np.random.uniform(-1.0, 1.0)
@@ -216,7 +226,11 @@ def cluster_random_displacement(atoms=None,
                 continue
             else:
                 dx[j] = np.array([rx, ry, rz])
-        a.set_positions(p0+dx) # set_positions method would not change the positions of fixed atoms
+        ra = np.random.uniform(0, 360)
+        c.set_positions(p0+dx)
+        c.rotate(ra, (0,0,1), center='COM')
+        a += c
+        a.wrap()
         if atoms_checker.is_good(a, quickanswer=True):
             return a
         else:
