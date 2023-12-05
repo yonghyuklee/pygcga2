@@ -503,7 +503,7 @@ def randomize_all(surface, dr, bond_range, max_trial=10):
 
     raise NoReasonableStructureFound("No good structure found using randomize")
 
-def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=50):
+def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=500):
     print("Running Add Cluster")
     surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=3, minCN=1)
     

@@ -193,9 +193,9 @@ def cluster_random_displacement(atoms=None,
             for indi in c.get_indices():
                 frozed_indexes.append(indi)
     symbols = atoms.get_chemical_symbols()
-    Rx, Ry = atoms.cell[0][0], atoms.cell[1][1]
-    rx, ry = np.random.uniform(0, Rx), np.random.uniform(0, Ry)
-    rz = np.random.uniform(-1.0, 1.0)
+    # Rx, Ry = atoms.cell[0][0], atoms.cell[1][1]
+    # rx, ry = np.random.uniform(0, Rx), np.random.uniform(0, Ry)
+    # rz = np.random.uniform(-1.0, 1.0)
     if elements is None:
         move_elements = list(set(symbols))
     else:
@@ -205,6 +205,9 @@ def cluster_random_displacement(atoms=None,
         # copy method would copy the constraints too
         a = atoms.copy()
         p0 = a.get_positions()
+        Rx, Ry = atoms.cell[0][0], atoms.cell[1][1]
+        rx, ry = np.random.uniform(0, Rx), np.random.uniform(0, Ry)
+        rz = np.random.uniform(-1.0, 1.0)
         dx = np.zeros(shape=p0.shape)
         for j, sj in enumerate(symbols):
             if sj not in move_elements:
