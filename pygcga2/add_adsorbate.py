@@ -568,6 +568,73 @@ def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=
         raise NoReasonableStructureFound("No good structure found using add cluster")
     raise NoReasonableStructureFound("No good structure found using add cluster")
 
+# def md_allegro(atoms, bond_range, lmp_loc, map_atoms=[13, 1, 78, 6, 8], line_read=1100):
+#     f = open("Current_Status.json")
+#     info = json.load(f)
+#     nstep = info["nsteps"]
+
+#     # os.system('$(which mpirun) -n 96 python nve_mod.py '+ str(N))
+
+#     T = random.randint(500, 2000)
+#     N = random.randint(500, 1000)
+#     atoms = read("Current_atoms.traj")
+#     n = len(atoms)
+#     ase_adap = AseAtomsAdaptor()
+#     atoms_ = ase_adap.get_structure(atoms)
+#     ld = LammpsData.from_structure(atoms_, atom_style="atomic")
+#     ld.write_file("struc.data")
+#     os.system(
+#         " {} -var T " + str(T) + " -var N " + str(N) + " < in.nve".format(lmp_loc)
+#     )
+
+#     images = read("md.lammpstrj", ":")
+#     trajw = TrajectoryWriter("md%05i.traj" % nstep, "a")
+
+#     f = open("log.lammps", "r")
+#     Lines = f.readlines()
+#     patten = r"(\d+\s+\-+\d*\.?\d+)"
+#     e_pot = []
+#     for i, line in enumerate(Lines):
+#         if i < line_read:
+#             continue
+#         s = line.strip()
+#         match = re.match(patten, s)
+#         if match != None:
+#             D = np.fromstring(s, sep=" ")
+#             e_pot.append(D[1])
+
+#     f_all = []
+#     for atoms in images:
+#         f = atoms.get_forces()
+#         f_all.append(f)
+
+#     for i, atoms in enumerate(images):
+#         an = atoms.get_atomic_numbers()
+
+#         for k, j in enumerate(map_atoms):
+#             an = [j if x == k + 1 else x for x in an]
+
+#         atoms.set_atomic_numbers(an)
+#         trajw.write(atoms, energy=e_pot[i], forces=f_all[i])
+
+#     t = read("md%05i.traj@-1" % nstep)
+
+#     if not os.path.isdir("md_files"):
+#         os.mkdir("md_files")
+
+#     os.system("mv md%05i.traj md_files/" % nstep)
+#     os.system("mv log.lammps md_files/")
+#     # os.system('rm md.lammpstrj')
+#     # os.system('rm md.traj')
+
+#     inspect = checkatoms(t, bond_range)
+#     if inspect:
+#         return t
+
+#     raise NoReasonableStructureFound(
+#         "Bond range didn't satisfy in the Allegro MD calculations"
+#     )
+
 # def generate_H_site(r0, distance=None, width=None, center_of_mass=None):
 #     """
 #     r0 :

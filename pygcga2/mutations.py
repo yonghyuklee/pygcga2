@@ -1,5 +1,6 @@
 from ase.data import covalent_radii, chemical_symbols
 import numpy as np
+from itertools import product
 from pygcga2.checkatoms import CheckAtoms
 from pygcga2.utilities import NoReasonableStructureFound
 from ase.constraints import FixBondLengths, FixedLine
@@ -201,12 +202,13 @@ def cluster_random_displacement(atoms=None,
     else:
         move_elements = elements[:]
     atoms_checker = CheckAtoms(min_bond=0.5, max_bond=2.0, verbosity=verbosity, bond_range=bond_range)
+    print(move_elements)
     for _ in range(max_trial):
         # copy method would copy the constraints too
         a = atoms.copy()
         c = atoms.copy()
         cluster, substrate = [], []
-        for ai in a:
+        for ai in atoms:
             if ai.symbol in move_elements:
                 cluster.append(ai.index)
             else:
@@ -222,15 +224,17 @@ def cluster_random_displacement(atoms=None,
         for j, sj in enumerate(symbols):
             if sj not in move_elements:
                 continue
-            elif j in frozed_indexes:
-                continue
+            # elif j in frozed_indexes:
+            #     continue
             else:
                 dx[j] = np.array([rx, ry, rz])
-        ra = np.random.uniform(0, 360)
+        
+        # print(dx)
         c.set_positions(p0+dx)
+        ra = np.random.uniform(0, 360)
         c.rotate(ra, (0,0,1), center='COM')
         a += c
-        a.wrap()
+        # a.wrap()
         if atoms_checker.is_good(a, quickanswer=True):
             return a
         else:
