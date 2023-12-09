@@ -207,18 +207,18 @@ def add_H(surface, bond_range=None, max_trial=50):
             theta = random.uniform(0, pi/2)
             phi = random.uniform(0, 2*pi)
             if surface[n_choose].symbol == 'Zr':
-                r = np.sqrt(2.0)
+                r = 2.0
                 x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
             elif surface[n_choose].symbol == 'O':
-                r = np.sqrt(1.0)
+                r = 1.0
                 x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
             else:
                 print(f"WARN: The mutation tries to add hydrogen at {surface[n_choose].symbol} atom!")
-                r = np.sqrt(1.5)
+                r = 1.5
                 x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
@@ -286,18 +286,18 @@ def add_multiple_H(surface, bond_range=None, max_trial=100):
                 theta = random.uniform(0, pi/2)
                 phi = random.uniform(0, 2*pi)
                 if surface[n].symbol == 'Zr':
-                    r = np.sqrt(2.0)
+                    r = 2.0
                     x = pos[n, 0] + r * sin(theta) * cos(phi)
                     y = pos[n, 1] + r * sin(theta) * sin(phi)
                     z = pos[n, 2] + r * cos(theta)
                 elif surface[n].symbol == 'O':
-                    r = np.sqrt(1.0)
+                    r = 1.0
                     x = pos[n, 0] + r * sin(theta) * cos(phi)
                     y = pos[n, 1] + r * sin(theta) * sin(phi)
                     z = pos[n, 2] + r * cos(theta)
                 else:
                     print(f"WARN: The mutation tries to add hydrogen at {surface[n].symbol} atom!")
-                    r = np.sqrt(1.5)
+                    r = 1.5
                     x = pos[n, 0] + r * sin(theta) * cos(phi)
                     y = pos[n, 1] + r * sin(theta) * sin(phi)
                     z = pos[n, 2] + r * cos(theta)
@@ -353,18 +353,18 @@ def add_O(surface, bond_range=None, max_trial=50):
             theta = random.uniform(0, pi/2)
             phi = random.uniform(0, 2*pi)
             if surface[n_choose].symbol == 'Zr':
-                r = np.sqrt(2.2)
+                r = 2.2
                 x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
             elif surface[n_choose].symbol == 'O':
-                r = np.sqrt(1.4)
+                r = 1.4
                 x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
             else:
                 print(f"WARN: The mutation tries to add oxygen at {surface[n_choose].symbol} atom!")
-                r = np.sqrt(1.5)
+                r = 1.5
                 x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
@@ -428,18 +428,18 @@ def add_OH(surface, bond_range=None, max_trial=50):
             theta = random.uniform(0, pi/2)
             phi = random.uniform(0, 2*pi)
             if surface[n_choose].symbol == 'Zr':
-                r = np.sqrt(2.2)
+                r = 2.2
                 x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
             elif surface[n_choose].symbol == 'O':
-                r = np.sqrt(1.4)
+                r = 1.4
                 x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
             else:
                 print(f"WARN: The mutation tries to add oxygen at {surface[n_choose].symbol} atom!")
-                r = np.sqrt(1.5)
+                r = 1.5
                 x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
@@ -508,9 +508,9 @@ def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=
     surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=3, minCN=1)
     
     pos = surface.get_positions()
-    posz = pos[:, 2] # gets z positions of atoms in surface
+    posz = pos[:, 2]
     posz_max = np.max(posz)
-    posz_mid = posz_max - 2 # np.average(posz)
+    posz_mid = posz_max - 2
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr':
@@ -519,7 +519,6 @@ def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=
         elif surface[i].symbol == 'O':
             if surface[i].position[2] >= posz_mid:
                 upper.append(i)
-    # get mean cluster xyz pos
 
     if len(upper) != 0:
         while True:
@@ -530,27 +529,21 @@ def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=
                 for key, value in element.items():
                     for n in n_choose[:value]:
                         print(n_choose)
-                        # print(n)
                         theta = random.uniform(0, pi/2)
                         phi = random.uniform(0, 2*pi)
-                        # print(trial)
                         if surface[n].symbol == 'Zr':
-                            # bl = random.uniform(2.4, 2.6)
-                            # r = np.sqrt(bl)
-                            r = np.sqrt(2.8)
+                            r = 2.8
                             x = pos[n, 0] + r * sin(theta) * cos(phi)
                             y = pos[n, 1] + r * sin(theta) * sin(phi)
                             z = pos[n, 2] + r * cos(theta)
                         elif surface[n].symbol == 'O':
-                            # bl = random.uniform(1.7, 1.8)
-                            # r = np.sqrt(bl)
-                            r = np.sqrt(2.0)
+                            r = 2.0
                             x = pos[n, 0] + r * sin(theta) * cos(phi)
                             y = pos[n, 1] + r * sin(theta) * sin(phi)
                             z = pos[n, 2] + r * cos(theta)
                         else:
                             print(f"WARN: The mutation tries to add {key} at {surface[n].symbol} atom!")
-                            r = np.sqrt(1.5)
+                            r = 1.5
                             x = pos[n, 0] + r * sin(theta) * cos(phi)
                             y = pos[n, 1] + r * sin(theta) * sin(phi)
                             z = pos[n, 2] + r * cos(theta)
@@ -567,6 +560,154 @@ def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=
         print("no more empty adsorption site in the current structure!")
         raise NoReasonableStructureFound("No good structure found using add cluster")
     raise NoReasonableStructureFound("No good structure found using add cluster")
+
+def add_H_cluster(surface, bond_range=None, max_trial=50):
+    print("Running Add H on Cluster Mutation")
+    surf_ind = find_surf(surface, el="Cu", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="Pd", mult=0.95, maxCN=13, minCN=1)
+    
+    pos = surface.get_positions()
+    posz = pos[:, 2]
+    posz_mid = np.average(posz)
+    upper = []
+    for i in surf_ind:
+        if surface[i].symbol == 'Cu':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+        elif surface[i].symbol == 'Pd':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+
+    if len(upper) != 0:
+        for _ in range(max_trial):
+            n_choose = np.random.choice(upper)
+            theta = random.uniform(0, pi/2)
+            phi = random.uniform(0, 2*pi)
+            if surface[n_choose].symbol == 'Cu':
+                r = 1.5
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            elif surface[n_choose].symbol == 'Pd':
+                r = 1.5
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            else:
+                print(f"WARN: The mutation tries to add hydrogen at {surface[n_choose].symbol} atom!")
+                r = 1.5
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            t = surface.copy()
+            t.append(Atom(symbol="H", position=[x, y, z], tag=1))
+
+            inspect = checkatoms(t, bond_range)
+            if inspect:
+                return t
+    else:
+        print("no more empty adsorption site in the current structure!")
+        raise NoReasonableStructureFound("No good structure found using add_H")
+    raise NoReasonableStructureFound("No good structure found using add_H")
+
+def add_O_cluster(surface, bond_range=None, max_trial=50):
+    print("Running Add O on Cluster Mutation")
+    surf_ind = find_surf(surface, el="Cu", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="Pd", mult=0.95, maxCN=13, minCN=1)
+    
+    pos = surface.get_positions()
+    posz = pos[:, 2]
+    posz_mid = np.average(posz)
+    upper = []
+    for i in surf_ind:
+        if surface[i].symbol == 'Cu':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+        elif surface[i].symbol == 'Pd':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+
+    if len(upper) != 0:
+        for _ in range(max_trial):
+            n_choose = np.random.choice(upper)
+            theta = random.uniform(0, pi/2)
+            phi = random.uniform(0, 2*pi)
+            if surface[n_choose].symbol == 'Cu':
+                r = 1.7
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            elif surface[n_choose].symbol == 'Pd':
+                r = 1.8
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            else:
+                print(f"WARN: The mutation tries to add oxygen at {surface[n_choose].symbol} atom!")
+                r = 1.5
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            t = surface.copy()
+            t.append(Atom(symbol="O", position=[x, y, z], tag=1))
+
+            inspect = checkatoms(t, bond_range)
+            if inspect:
+                return t
+    else:
+        print("no more empty adsorption site in the current structure!")
+        raise NoReasonableStructureFound("No good structure found using add_O")
+    raise NoReasonableStructureFound("No good structure found using add_O")
+
+def add_OH_cluster(surface, bond_range=None, max_trial=50):
+    print("Running Add OH on Cluster Mutation")
+    surf_ind = find_surf(surface, el="Cu", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="Pd", mult=0.95, maxCN=13, minCN=1)
+    
+    pos = surface.get_positions()
+    posz = pos[:, 2]
+    posz_mid = np.average(posz)
+    upper = []
+    for i in surf_ind:
+        if surface[i].symbol == 'Cu':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+        elif surface[i].symbol == 'Pd':
+            if surface[i].position[2] >= posz_mid:
+                upper.append(i)
+
+    if len(upper) != 0:
+        for _ in range(max_trial):
+            n_choose = np.random.choice(upper)
+            theta = random.uniform(0, pi/2)
+            phi = random.uniform(0, 2*pi)
+            if surface[n_choose].symbol == 'Cu':
+                r = 1.7
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            elif surface[n_choose].symbol == 'Pd':
+                r = 1.8
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            else:
+                print(f"WARN: The mutation tries to add oxygen at {surface[n_choose].symbol} atom!")
+                r = 1.5
+                x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
+                y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
+                z = pos[n_choose, 2] + r * cos(theta)
+            t = surface.copy()
+            t.append(Atom(symbol="O", position=[x, y, z], tag=1))
+            dir_array = np.array([x - pos[n_choose, 0], y - pos[n_choose, 1], z - pos[n_choose, 2]])
+            norm_vec = dir_array / np.linalg.norm(dir_array)
+            H_pos = np.array([x, y, z]) + norm_vec * 0.97907
+            t.append(Atom(symbol="H", position=H_pos, tag=1))
+
+            inspect = checkatoms(t, bond_range)
+            if inspect:
+                return t
+    else:
+        print("no more empty adsorption site in the current structure!")
+        raise NoReasonableStructureFound("No good structure found using add_OH")
+    raise NoReasonableStructureFound("No good structure found using add_OH")
 
 # def md_allegro(atoms, bond_range, lmp_loc, map_atoms=[13, 1, 78, 6, 8], line_read=1100):
 #     f = open("Current_Status.json")
