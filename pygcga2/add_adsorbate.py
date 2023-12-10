@@ -438,7 +438,7 @@ def add_OH(surface, bond_range=None, max_trial=50):
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
                 z = pos[n_choose, 2] + r * cos(theta)
             else:
-                print(f"WARN: The mutation tries to add oxygen at {surface[n_choose].symbol} atom!")
+                print(f"WARN: The mutation tries to add OH at {surface[n_choose].symbol} atom!")
                 r = 1.5
                 x = pos[n_choose, 0] + r * sin(theta) * cos(phi)
                 y = pos[n_choose, 1] + r * sin(theta) * sin(phi)
@@ -706,8 +706,8 @@ def add_OH_cluster(surface, bond_range=None, max_trial=50):
                 return t
     else:
         print("no more empty adsorption site in the current structure!")
-        raise NoReasonableStructureFound("No good structure found using add_OH")
-    raise NoReasonableStructureFound("No good structure found using add_OH")
+        raise NoReasonableStructureFound("No good structure found using add_OH_cluster")
+    raise NoReasonableStructureFound("No good structure found using add_OH_cluster")
 
 # def md_allegro(atoms, bond_range, lmp_loc, map_atoms=[13, 1, 78, 6, 8], line_read=1100):
 #     f = open("Current_Status.json")
