@@ -4,6 +4,7 @@ from itertools import product
 from pygcga2.checkatoms import CheckAtoms
 from pygcga2.utilities import NoReasonableStructureFound
 from ase.constraints import FixBondLengths, FixedLine
+from math import sin, cos, pi, atan2
 
 
 BOND_LENGTHS = dict(zip(chemical_symbols, covalent_radii))
@@ -185,26 +186,15 @@ def cluster_random_displacement(atoms=None,
     if atoms is None:
         raise RuntimeError("You are mutating a None type")
 
-    # frozed_indexes=[]
-    # for c in atoms.constraints:
-    #     if isinstance(c, FixBondLengths):
-    #         for indi in c.get_indices():
-    #             frozed_indexes.append(indi)
-    #     elif isinstance(c, FixedLine):
-    #         for indi in c.get_indices():
-    #             frozed_indexes.append(indi)
     symbols = atoms.get_chemical_symbols()
-    # Rx, Ry = atoms.cell[0][0], atoms.cell[1][1]
-    # rx, ry = np.random.uniform(0, Rx), np.random.uniform(0, Ry)
-    # rz = np.random.uniform(-1.0, 1.0)
+
     if elements is None:
         move_elements = list(set(symbols))
     else:
         move_elements = elements[:]
     atoms_checker = CheckAtoms(min_bond=0.5, max_bond=2.0, verbosity=verbosity, bond_range=bond_range)
-    print(move_elements)
+
     for _ in range(max_trial):
-        # copy method would copy the constraints too
         a = atoms.copy()
         c = atoms.copy()
         cluster, substrate = [], []
@@ -221,13 +211,33 @@ def cluster_random_displacement(atoms=None,
         rx, ry = np.random.uniform(0, Rx), np.random.uniform(0, Ry)
         rz = np.random.uniform(-1.0, 1.0)
         dx = np.full(p0.shape, [rx, ry, rz])
-        # dx = np.zeros(shape=p0.shape)
-        # dx[j] = np.array([rx, ry, rz])
-        
-        # print(dx)
+
         c.set_positions(p0+dx)
+
+        coord_x, coord_y = [], []
+        for atom in c:
+            theta_x_i = atom.position[0] / Rx * 2* pi
+            theta_y_i = atom.position[1] / Ry * 2* pi
+            coord_x.append([cos(theta_x_i), sin(theta_x_i)])
+            coord_y.append([cos(theta_y_i), sin(theta_y_i)])
+        coord_x = np.array(coord_x)
+        coord_y = np.array(coord_y)
+        coord_x = np.mean(coord_x, axis=0)
+        coord_y = np.mean(coord_y, axis=0)
+        theta_x_av = atan2(-np.array(coord_x[1]), -np.array(coord_x[0])) + pi
+        theta_y_av = atan2(-np.array(coord_y[1]), -np.array(coord_y[0])) + pi
+
+        xcom = Rx * theta_x_av / (2*pi)
+        ycom = Ry * theta_y_av / (2*pi)
+
+        c.positions = c.positions + [Rx/2 - xcom, Ry/2 - ycom, 0]
+        c.wrap()
+        a.positions = a.positions + [Rx/2 - xcom, Ry/2 - ycom, 0]
+        a.wrap()
+
         ra = np.random.uniform(0, 360)
-        c.rotate(ra, (0,0,1), center='COM')
+        c.rotate(ra, (0,0,1), center=(Rx/2, Ry/2, 0))
+
         a += c
         # a.wrap()
         if atoms_checker.is_good(a, quickanswer=True):
