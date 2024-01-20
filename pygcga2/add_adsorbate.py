@@ -514,7 +514,7 @@ def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr' or surface[i].symbol == 'O':
-            if surface[i].position[2] >= posz_mid and surface[i].position[0] <= surface.cell[0][0] / 2.5 and surface[i].position[1] <= surface.cell[1][1] / 2.5:
+            if surface[i].position[2] >= posz_mid and surface[i].position[0] <= surface.cell[0][0] / 3 and surface[i].position[1] <= surface.cell[1][1] / 3:
                 upper.append(i)
 
     if len(upper) != 0:
