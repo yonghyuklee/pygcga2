@@ -10,6 +10,8 @@ from math import cos, sin, pi
 
 from ase import Atoms
 from ase.build import molecule as ase_create_molecule
+from ase.build import add_adsorbate
+from ase.cluster import Cluster
 from ase.data import covalent_radii, chemical_symbols
 # from pygcga2.topology import Topology
 # from pygcga2.checkatoms import CheckAtoms
@@ -506,6 +508,8 @@ def randomize_all(surface, dr, bond_range, max_trial=10):
 def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=500):
     print("Running Add Cluster")
     surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=3, minCN=1)
+
+    cluster = Cluster(symbols=f'Cu{element["Cu"]}Pd{element["Pd"]}', positions=[[0,0,0],[2.5,0,0],[0,2.5,0],[0,0,2.5],[1.7,1.7,1.7]])
     
     pos = surface.get_positions()
     posz = pos[:, 2]
@@ -514,38 +518,63 @@ def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr' or surface[i].symbol == 'O':
-            if surface[i].position[2] >= posz_mid and surface[i].position[0] <= surface.cell[0][0] / 3.2 and surface[i].position[1] <= surface.cell[1][1] / 3.2:
+            if surface[i].position[2] >= posz_mid: #and surface[i].position[0] <= surface.cell[0][0] / 3.2 and surface[i].position[1] <= surface.cell[1][1] / 3.2:
                 upper.append(i)
 
     if len(upper) != 0:
         while True:
             for _ in range(max_trial):
-                n_choose = np.random.choice(upper, size=sum(element.values()))
-                random.shuffle(n_choose)
+                n = np.random.choice(upper)
                 t = surface.copy()
-                for key, value in element.items():
-                    for n in n_choose[:value]:
-                        print(n_choose)
-                        theta = random.uniform(0, pi/2)
-                        phi = random.uniform(0, 2*pi)
-                        if surface[n].symbol == 'Zr':
-                            r = 2.8
-                            x = pos[n, 0] + r * sin(theta) * cos(phi)
-                            y = pos[n, 1] + r * sin(theta) * sin(phi)
-                            z = pos[n, 2] + r * cos(theta)
-                        elif surface[n].symbol == 'O':
-                            r = 2.0
-                            x = pos[n, 0] + r * sin(theta) * cos(phi)
-                            y = pos[n, 1] + r * sin(theta) * sin(phi)
-                            z = pos[n, 2] + r * cos(theta)
-                        else:
-                            print(f"WARN: The mutation tries to add {key} at {surface[n].symbol} atom!")
-                            r = 1.5
-                            x = pos[n, 0] + r * sin(theta) * cos(phi)
-                            y = pos[n, 1] + r * sin(theta) * sin(phi)
-                            z = pos[n, 2] + r * cos(theta)
-                        t.append(Atom(symbol=key, position=[x, y, z], tag=1))
-                    n_choose = n_choose[value:]
+
+                theta = random.uniform(0, pi/2)
+                phi = random.uniform(0, 2*pi)
+
+                if surface[n].symbol == 'Zr':
+                    r = 2.8
+                    x = pos[n, 0] + r * sin(theta) * cos(phi)
+                    y = pos[n, 1] + r * sin(theta) * sin(phi)
+                    z = pos[n, 2] + r * cos(theta)
+                elif surface[n].symbol == 'O':
+                    r = 2.0
+                    x = pos[n, 0] + r * sin(theta) * cos(phi)
+                    y = pos[n, 1] + r * sin(theta) * sin(phi)
+                    z = pos[n, 2] + r * cos(theta)
+                else:
+                    print(f"WARN: The mutation tries to add cluster at {surface[n].symbol} atom!")
+                    r = 2.5
+                    x = pos[n, 0] + r * sin(theta) * cos(phi)
+                    y = pos[n, 1] + r * sin(theta) * sin(phi)
+                    z = pos[n, 2] + r * cos(theta)
+                print(r * cos(theta))
+                add_adsorbate(t, cluster, position=[x, y], height=r*cos(theta)-0.5)
+
+                # n_choose = np.random.choice(upper, size=sum(element.values()))
+                # random.shuffle(n_choose)
+                # t = surface.copy()
+                # for key, value in element.items():
+                #     for n in n_choose[:value]:
+                #         print(n_choose)
+                #         theta = random.uniform(0, pi/2)
+                #         phi = random.uniform(0, 2*pi)
+                #         if surface[n].symbol == 'Zr':
+                #             r = 2.8
+                #             x = pos[n, 0] + r * sin(theta) * cos(phi)
+                #             y = pos[n, 1] + r * sin(theta) * sin(phi)
+                #             z = pos[n, 2] + r * cos(theta)
+                #         elif surface[n].symbol == 'O':
+                #             r = 2.0
+                #             x = pos[n, 0] + r * sin(theta) * cos(phi)
+                #             y = pos[n, 1] + r * sin(theta) * sin(phi)
+                #             z = pos[n, 2] + r * cos(theta)
+                #         else:
+                #             print(f"WARN: The mutation tries to add {key} at {surface[n].symbol} atom!")
+                #             r = 1.5
+                #             x = pos[n, 0] + r * sin(theta) * cos(phi)
+                #             y = pos[n, 1] + r * sin(theta) * sin(phi)
+                #             z = pos[n, 2] + r * cos(theta)
+                #         t.append(Atom(symbol=key, position=[x, y, z], tag=1))
+                #     n_choose = n_choose[value:]
 
                 inspect = checkatoms(t, bond_range)
                 if inspect:
