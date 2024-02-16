@@ -190,16 +190,20 @@ def add_H(surface, bond_range=None, max_trial=50):
     pos = surface.get_positions()
     posz = pos[:, 2] # gets z positions of atoms in surface
     # posz_max = np.max(posz)
-    posz_min = np.min(posz)
+    # posz_min = np.min(posz)
     # slab_thick = posz_max - posz_min
     posz_mid = np.average(posz) # + 0.2 * slab_thick
+    nat_cut = natural_cutoffs(surface, mult=0.95)
+    nl = NeighborList(nat_cut, self_interaction=False, bothways=True)
+    nl.update(surface)
     upper = []
     for i in surf_ind:
         if surface[i].symbol == 'Zr':
             if surface[i].position[2] >= posz_mid:
                 upper.append(i)
         elif surface[i].symbol == 'O':
-            if surface[i].position[2] >= posz_mid:
+            indices, offsets = nl.get_neighbors(i)
+            if surface[i].position[2] >= posz_mid and not any(surface[a].symbol == 'H' for a in indices):
                 upper.append(i)
     # get mean cluster xyz pos
 
