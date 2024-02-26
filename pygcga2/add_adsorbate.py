@@ -513,7 +513,10 @@ def add_cluster(surface, element={'Cu': 4, 'Pd': 1}, bond_range=None, max_trial=
     print("Running Add Cluster")
     surf_ind = find_surf(surface, el="Zr", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="O", mult=0.85, maxCN=3, minCN=1)
 
-    cluster = Cluster(symbols=f'Cu{element["Cu"]}Pd{element["Pd"]}', positions=[[0,0,0],[2.5,0,0],[0,2.5,0],[0,0,2.5],[1.7,1.7,1.7]])
+    if sum(element.values()) == 5:
+        cluster = Cluster(symbols=f'Cu{element["Cu"]}Pd{element["Pd"]}', positions=[[0,0,0],[2.5,0,0],[0,2.5,0],[0,0,2.5],[1.7,1.7,1.7]])
+    elif sum(element.values()) == 4:
+        cluster = Cluster(symbols=f'Cu{element["Cu"]}Pd{element["Pd"]}', positions=[[0,0,0],[2.5*cos(2*pi/24),2.5*sin(2*pi/24),0],[2.5*cos(10*pi/24),2.5*sin(10*pi/24),0],[2.5*np.sqrt(6)/3,2.5*np.sqrt(6)/3,np.sqrt(2.5**2 - (2.5*np.sqrt(6)/3)**2)]])
     
     pos = surface.get_positions()
     posz = pos[:, 2]
