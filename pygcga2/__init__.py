@@ -23,6 +23,7 @@ from .add_adsorbate import add_cluster
 from .add_adsorbate import add_H_cluster
 from .add_adsorbate import add_O_cluster
 from .add_adsorbate import add_OH_cluster
+from .add_adsorbate import add_molc_on_cluster
 # from .add_adsorbate import move_CO
 # from .add_adsorbate import add_h_gas
 # from .initial import initial_structure_gen
@@ -30,3 +31,4 @@ from .rand_cluster import rand_clustering
 from .rand_cluster import voronoi_polygons
 from .mutations import cluster_random_perturbation
 from .mutations import cluster_random_displacement
+from .mutations import molc_random_displacement

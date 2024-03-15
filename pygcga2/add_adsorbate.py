@@ -7,6 +7,7 @@ import numpy as np
 import random
 from math import cos, sin, pi
 # import numpy.ma as ma
+from scipy import sparse
 
 from ase import Atoms
 from ase.build import molecule as ase_create_molecule
@@ -136,6 +137,17 @@ def find_surf(atoms, el="Cu", mult=0.95, maxCN=12, minCN=5):
             surf_ndx.append(target_ndx[i])
 
     return surf_ndx
+
+def examine_unconnected_components(atoms):
+    nat_cut = natural_cutoffs(atoms, mult=1.2)
+    nl = NeighborList(nat_cut, skin=0, self_interaction=False, bothways=True)
+    nl.update(atoms)
+    matrix = nl.get_connectivity_matrix()
+    n_components, component_list = sparse.csgraph.connected_components(matrix)
+    if n_components == 1:
+        return True
+    elif n_components > 1:
+        return False
 
 def remove_H(atoms=None):
     H_ndx = [atom.index for atom in atoms if atom.symbol == "H"]
@@ -741,6 +753,56 @@ def add_OH_cluster(surface, bond_range=None, max_trial=50):
         print("no more empty adsorption site in the current structure!")
         raise NoReasonableStructureFound("No good structure found using add_OH_cluster")
     raise NoReasonableStructureFound("No good structure found using add_OH_cluster")
+
+def add_molc_on_cluster(surface, molc, bond_range=None, max_trial=500):
+    print("Running Add Molecule")
+    # surface.set_tags(0)
+    molc.set_tags(2)
+    surf_ind = find_surf(surface, el="Cu", mult=0.95, maxCN=13, minCN=1) + find_surf(surface, el="Pd", mult=0.95, maxCN=13, minCN=1)
+    pos = surface.get_positions()
+
+    if len(surf_ind) != 0:
+        while True:
+            for _ in range(max_trial):
+                n = np.random.choice(surf_ind)
+                t = surface.copy()
+
+                theta = random.uniform(0, pi/2)
+                phi = random.uniform(0, 2*pi)
+
+                if surface[n].symbol == 'Cu':
+                    r = 2.8
+                    x = pos[n, 0] + r * sin(theta) * cos(phi)
+                    y = pos[n, 1] + r * sin(theta) * sin(phi)
+                    z = pos[n, 2] + r * cos(theta)
+                elif surface[n].symbol == 'Pd':
+                    r = 2.8
+                    x = pos[n, 0] + r * sin(theta) * cos(phi)
+                    y = pos[n, 1] + r * sin(theta) * sin(phi)
+                    z = pos[n, 2] + r * cos(theta)
+
+                cmolc = molc.copy()
+                seed = np.random.randint(20, 60)
+                cmolc.rattle(0.04, seed=seed)
+                rx, ry, rz = np.random.uniform(-45, 45), np.random.uniform(0, 360), np.random.uniform(0, 360)
+                cmolc.rotate(rx, 'x', 'com')
+                cmolc.rotate(rz, 'z', 'com')
+
+                dh = np.random.uniform(-2, 2)
+
+                add_adsorbate(t, cmolc, position=[x, y], height=r*cos(theta)+dh)
+
+                inspect = checkatoms(t, bond_range)
+                if inspect and examine_unconnected_components(t):
+                    print("GENERATE A GOOD CANDIDATE!")
+                    return t
+            else:
+                break
+
+    else:
+        print("no more empty adsorption site in the current structure!")
+        raise NoReasonableStructureFound("No good structure found using add cluster")
+    raise NoReasonableStructureFound("No good structure found using add cluster")
 
 # def md_allegro(atoms, bond_range, lmp_loc, map_atoms=[13, 1, 78, 6, 8], line_read=1100):
 #     f = open("Current_Status.json")

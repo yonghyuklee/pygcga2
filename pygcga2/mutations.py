@@ -5,6 +5,7 @@ from pygcga2.checkatoms import CheckAtoms
 from pygcga2.utilities import NoReasonableStructureFound
 from ase.constraints import FixBondLengths, FixedLine
 from math import sin, cos, pi, atan2
+from pygcga2 import add_molc_on_cluster
 
 
 BOND_LENGTHS = dict(zip(chemical_symbols, covalent_radii))
@@ -240,6 +241,39 @@ def cluster_random_displacement(atoms=None,
 
         a += c
         # a.wrap()
+        if atoms_checker.is_good(a, quickanswer=True):
+            return a
+        else:
+            continue
+    raise NoReasonableStructureFound("No reasonable structure found when mutate atoms")
+
+
+def molc_random_displacement(atoms=None,
+                            max_trial=500, verbosity=False,
+                            tags=[2], bond_range=None):
+    """
+    :param atoms: atoms to be mutated
+    :param max_trial: number of trials
+    :param verbosity: output verbosity
+    :param elements: which elements to be displaced
+    :return:
+    """
+    if atoms is None:
+        raise RuntimeError("You are mutating a None type")
+    
+    slab = atoms.copy()
+    molc = atoms.copy()
+    del slab[[atom.index for atom in slab if atom.tag not in tags]]
+    del molc[[atom.index for atom in molc if atom.tag in tags]]
+
+    atoms_checker = CheckAtoms(min_bond=0.5, max_bond=2.0, verbosity=verbosity, bond_range=bond_range)
+
+    for _ in range(max_trial):
+        cslab = slab.copy()
+        cmolc = molc.copy()
+
+        a = add_molc_on_cluster(cslab, cmolc, bond_range=bond_range)
+
         if atoms_checker.is_good(a, quickanswer=True):
             return a
         else:
