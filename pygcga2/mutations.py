@@ -263,8 +263,8 @@ def molc_random_displacement(atoms=None,
     
     slab = atoms.copy()
     molc = atoms.copy()
-    del slab[[atom.index for atom in slab if atom.tag not in tags]]
-    del molc[[atom.index for atom in molc if atom.tag in tags]]
+    del slab[[atom.index for atom in slab if atom.tag in tags]]
+    del molc[[atom.index for atom in molc if atom.tag not in tags]]
 
     atoms_checker = CheckAtoms(min_bond=0.5, max_bond=2.0, verbosity=verbosity, bond_range=bond_range)
 
