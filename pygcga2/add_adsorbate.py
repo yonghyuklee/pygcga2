@@ -782,10 +782,11 @@ def add_molc_on_cluster(surface, molc, bond_range=None, max_trial=500):
                     z = pos[n, 2] + r * cos(theta)
 
                 cmolc = molc.copy()
-                seed = np.random.randint(20, 60)
-                cmolc.rattle(0.04, seed=seed)
-                rx, ry, rz = np.random.uniform(-45, 45), np.random.uniform(0, 360), np.random.uniform(0, 360)
+                # seed = np.random.randint(20, 60)
+                # cmolc.rattle(0.04, seed=seed)
+                rx, ry, rz = np.random.uniform(0, 360), np.random.uniform(0, 360), np.random.uniform(0, 360)
                 cmolc.rotate(rx, 'x', 'com')
+                cmolc.rotate(rz, 'y', 'com')
                 cmolc.rotate(rz, 'z', 'com')
 
                 dh = np.random.uniform(-2, 2)
