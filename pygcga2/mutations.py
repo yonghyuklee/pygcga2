@@ -1,11 +1,13 @@
 from ase.data import covalent_radii, chemical_symbols
 import numpy as np
+from scipy import sparse
 from itertools import product
 from pygcga2.checkatoms import CheckAtoms
 from pygcga2.utilities import NoReasonableStructureFound
 from ase.constraints import FixBondLengths, FixedLine
 from math import sin, cos, pi, atan2
-from pygcga2 import add_molc_on_cluster
+from ase.neighborlist import NeighborList, natural_cutoffs
+from pygcga2 import add_molc_on_cluster, examine_unconnected_components
 
 
 BOND_LENGTHS = dict(zip(chemical_symbols, covalent_radii))
@@ -248,9 +250,9 @@ def cluster_random_displacement(atoms=None,
     raise NoReasonableStructureFound("No reasonable structure found when mutate atoms")
 
 
-def molc_random_displacement(atoms=None,
+def molc_random_displacement(atoms=None, molc=None,
                             max_trial=500, verbosity=False,
-                            tags=[2], bond_range=None):
+                            elements=['C'], bond_range=None):
     """
     :param atoms: atoms to be mutated
     :param max_trial: number of trials
@@ -260,11 +262,23 @@ def molc_random_displacement(atoms=None,
     """
     if atoms is None:
         raise RuntimeError("You are mutating a None type")
+    elif molc is None:
+        raise RuntimeError("Your molecule is a None type")
     
     slab = atoms.copy()
-    molc = atoms.copy()
-    del slab[[atom.index for atom in slab if atom.tag in tags]]
-    del molc[[atom.index for atom in molc if atom.tag not in tags]]
+    del slab[[atom.index for atom in slab if atom.symbol in elements]]
+    if not examine_unconnected_components(slab):
+        nat_cut = natural_cutoffs(slab, mult=1.2)
+        nl = NeighborList(nat_cut, skin=0, self_interaction=False, bothways=True)
+        nl.update(slab)
+        matrix = nl.get_connectivity_matrix()
+        n_components, component_list = sparse.csgraph.connected_components(matrix)
+        unique, counts = np.unique(component_list, return_counts=True)
+        disconnected_atom = []
+        for n, c in enumerate(component_list):
+            if c != unique[np.argmax(counts)]:
+                disconnected_atom.append(n)
+        del slab[disconnected_atom]
 
     atoms_checker = CheckAtoms(min_bond=0.5, max_bond=2.0, verbosity=verbosity, bond_range=bond_range)
 

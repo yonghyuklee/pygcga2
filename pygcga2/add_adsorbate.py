@@ -800,7 +800,8 @@ def add_molc_on_cluster(surface, molc, bond_range=None, max_trial=500):
                 add_adsorbate(t, cmolc, position=[x, y], height=r*cos(theta)+dh, mol_index=mi)
 
                 inspect = checkatoms(t, bond_range)
-                if inspect and examine_unconnected_components(t):
+                # if inspect and examine_unconnected_components(t):
+                if inspect:
                     print("GENERATE A GOOD CANDIDATE!")
                     return t
             else:
