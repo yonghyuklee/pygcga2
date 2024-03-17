@@ -808,8 +808,8 @@ def add_molc_on_cluster(surface, molc, bond_range=None, max_trial=500):
 
     else:
         print("no more empty adsorption site in the current structure!")
-        raise NoReasonableStructureFound("No good structure found using add cluster")
-    raise NoReasonableStructureFound("No good structure found using add cluster")
+        raise NoReasonableStructureFound("No good structure found using add_molc_on_cluster")
+    raise NoReasonableStructureFound("No good structure found using add_molc_on_cluster")
 
 # def md_allegro(atoms, bond_range, lmp_loc, map_atoms=[13, 1, 78, 6, 8], line_read=1100):
 #     f = open("Current_Status.json")
