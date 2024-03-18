@@ -145,9 +145,9 @@ def examine_unconnected_components(atoms):
     matrix = nl.get_connectivity_matrix()
     n_components, component_list = sparse.csgraph.connected_components(matrix)
     if n_components == 1:
-        return True
+        return True, n_components
     elif n_components > 1:
-        return False
+        return False, n_components
 
 def remove_H(atoms=None):
     H_ndx = [atom.index for atom in atoms if atom.symbol == "H"]
@@ -800,7 +800,8 @@ def add_molc_on_cluster(surface, molc, bond_range=None, max_trial=500):
                 add_adsorbate(t, cmolc, position=[x, y], height=r*cos(theta)+dh, mol_index=mi)
 
                 inspect = checkatoms(t, bond_range)
-                if inspect and examine_unconnected_components(t):
+                connected, n_components = examine_unconnected_components(t)
+                if inspect and connected:
                     print("GENERATE A GOOD CANDIDATE!")
                     return t
             else:
