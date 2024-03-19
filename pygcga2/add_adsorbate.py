@@ -149,8 +149,8 @@ def examine_unconnected_components(atoms):
     elif n_components > 1:
         return False, n_components
 
-def remove_H(atoms=None):
-    H_ndx = [atom.index for atom in atoms if atom.symbol == "H"]
+def remove_H(atoms=None, tags=[2]):
+    H_ndx = [atom.index for atom in atoms if atom.symbol == "H" and atom.tag not in tags]
     if len(H_ndx) != 0:
         sel_ndx = random.choice(H_ndx)
         del atoms[sel_ndx]
