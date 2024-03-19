@@ -267,7 +267,8 @@ def molc_random_displacement(atoms=None, molc=None,
     
     slab = atoms.copy()
     del slab[[atom.index for atom in slab if atom.symbol in elements]]
-    if not examine_unconnected_components(slab):
+    connected, n_components = examine_unconnected_components(slab)
+    if not connected:
         nat_cut = natural_cutoffs(slab, mult=1.2)
         nl = NeighborList(nat_cut, skin=0, self_interaction=False, bothways=True)
         nl.update(slab)
