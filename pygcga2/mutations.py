@@ -251,7 +251,7 @@ def cluster_random_displacement(atoms=None,
 
 
 def molc_random_displacement(atoms=None, molc=None,
-                            max_trial=500, verbosity=False,
+                            max_trial=50, verbosity=False,
                             elements=['C'], bond_range=None):
     """
     :param atoms: atoms to be mutated

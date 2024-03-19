@@ -754,7 +754,7 @@ def add_OH_cluster(surface, bond_range=None, max_trial=50):
         raise NoReasonableStructureFound("No good structure found using add_OH_cluster")
     raise NoReasonableStructureFound("No good structure found using add_OH_cluster")
 
-def add_molc_on_cluster(surface, molc, bond_range=None, max_trial=500):
+def add_molc_on_cluster(surface, molc, bond_range=None, max_trial=50):
     print("Running Add Molecule")
     # surface.set_tags(0)
     molc.set_tags(2)
