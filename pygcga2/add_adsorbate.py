@@ -149,6 +149,30 @@ def examine_unconnected_components(atoms):
     elif n_components > 1:
         return False, n_components
 
+def examine_isolated_H_molecule_presents(newatoms, tags=[2]):
+    nat_cut = natural_cutoffs(newatoms, mult=1.2)
+    nl = NeighborList(nat_cut, skin=0, self_interaction=False, bothways=True)
+    nl.update(newatoms)
+    matrix = nl.get_connectivity_matrix()
+    surf_ind = []
+    for a in newatoms:
+        surf_ind.append(a.index)
+    isolated = []
+    for i in surf_ind:
+        if newatoms[i].symbol == 'H' and newatoms[i].tag in tags:
+            indices, offsets = nl.get_neighbors(i)
+            near_C = []
+            for a in indices:
+                if newatoms[a].symbol == 'C':
+                    near_C.append(a)
+            if len(near_C) == 0:
+                isolated.append(i)
+    print("There are {} number of isolated H from molc in the system".format(len(isolated)))
+    if len(isolated) > 0:
+        return True
+    else:
+        return False
+
 def remove_H(atoms=None, tags=[2]):
     H_ndx = [atom.index for atom in atoms if atom.symbol == "H" and atom.tag not in tags]
     if len(H_ndx) != 0:

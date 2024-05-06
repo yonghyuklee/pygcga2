@@ -25,6 +25,7 @@ from .add_adsorbate import add_O_cluster
 from .add_adsorbate import add_OH_cluster
 from .add_adsorbate import add_molc_on_cluster
 from .add_adsorbate import examine_unconnected_components
+from .add_adsorbate import examine_isolated_H_molecule_presents
 # from .add_adsorbate import move_CO
 # from .add_adsorbate import add_h_gas
 # from .initial import initial_structure_gen
