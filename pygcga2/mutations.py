@@ -266,7 +266,10 @@ def molc_random_displacement(atoms=None, molc=None,
         raise RuntimeError("Your molecule is a None type")
     
     # delete troublesome information
-    del atoms.info['adsorbate_info']
+    try:
+        del atoms.info['adsorbate_info']
+    except:
+        pass
     
     slab = atoms.copy()
     del slab[[atom.index for atom in slab if atom.symbol in elements]]
