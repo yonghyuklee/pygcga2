@@ -34,3 +34,4 @@ from .rand_cluster import voronoi_polygons
 from .mutations import cluster_random_perturbation
 from .mutations import cluster_random_displacement
 from .mutations import molc_random_displacement
+from .mutations import cluster_random_swap

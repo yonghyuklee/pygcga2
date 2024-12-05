@@ -1,5 +1,6 @@
 from ase.data import covalent_radii, chemical_symbols
 import numpy as np
+import random
 from scipy import sparse
 from itertools import product
 from pygcga2.checkatoms import CheckAtoms
@@ -8,6 +9,7 @@ from ase.constraints import FixBondLengths, FixedLine
 from math import sin, cos, pi, atan2
 from ase.neighborlist import NeighborList, natural_cutoffs
 from pygcga2 import add_molc_on_cluster, examine_unconnected_components
+from collections import defaultdict
 
 
 BOND_LENGTHS = dict(zip(chemical_symbols, covalent_radii))
@@ -248,6 +250,62 @@ def cluster_random_displacement(atoms=None,
         else:
             continue
     raise NoReasonableStructureFound("No reasonable structure found when mutate atoms")
+
+
+def cluster_random_swap(atoms=None,
+                        max_trial=500, verbosity=False,
+                        elements=['Cu', 'Pd'], tags=[], bond_range=None):
+    """
+    Randomly swaps two atoms of specified elements within a cluster.
+
+    :param atoms: ASE Atoms object to mutate.
+    :param max_trial: Number of trials to attempt swaps.
+    :param verbosity: Output verbosity for debugging.
+    :param elements: Elements to consider for swapping (e.g., ['Cu', 'Pd']).
+    :param tags: Atom tags for filtering (optional).
+    :param bond_range: Bond range for the checker.
+    :return: Mutated ASE Atoms object with swapped positions.
+    """
+    if atoms is None:
+        raise RuntimeError("You are swapping a None type.")
+
+    symbols = atoms.get_chemical_symbols()
+    move_elements = elements[:] if elements else list(set(symbols))
+
+    # Organize indices by element
+    indices = defaultdict(list)
+    for atom in atoms:
+        if atom.symbol in move_elements and (not tags or atom.tag in tags):
+            indices[atom.symbol].append(atom.index)
+
+    # Check sufficient elements exist
+    if len(indices) < 2 or any(len(indices[key]) == 0 for key in move_elements):
+        raise RuntimeError(f"Insufficient atoms of {elements} for swapping.")
+
+    atoms_checker = CheckAtoms(min_bond=0.5, max_bond=2.0, verbosity=verbosity, bond_range=bond_range)
+
+    for _ in range(max_trial):
+        # Randomly select two distinct elements and one atom from each
+        selected_elements = random.sample(indices.keys(), 2)
+        selected_indices = [random.choice(indices[key]) for key in selected_elements]
+
+        # Swap atom positions
+        a = atoms.copy()
+        pos_1 = a.positions[selected_indices[0]].copy()
+        pos_2 = a.positions[selected_indices[1]].copy()
+
+        a.positions[selected_indices[0]] = pos_2
+        a.positions[selected_indices[1]] = pos_1
+
+        if verbosity:
+            print(f"Swapped atoms {selected_elements[0]} (index {selected_indices[0]}) "
+                  f"and {selected_elements[1]} (index {selected_indices[1]}).")
+
+        # Validate structure
+        if atoms_checker.is_good(a, quickanswer=True):
+            return a
+
+    raise NoReasonableStructureFound("No reasonable structure found after swapping atoms.")
 
 
 def molc_random_displacement(atoms=None, molc=None,
