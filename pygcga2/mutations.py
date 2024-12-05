@@ -286,7 +286,7 @@ def cluster_random_swap(atoms=None,
 
     for _ in range(max_trial):
         # Randomly select two distinct elements and one atom from each
-        selected_elements = random.sample(indices.keys(), 2)
+        selected_elements = random.sample(list(indices.keys()), 2)
         selected_indices = [random.choice(indices[key]) for key in selected_elements]
 
         # Swap atom positions
